@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Fonction helper pour vérifier si l'utilisateur est authentifié
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Fonction helper pour vérifier si l'utilisateur est admin
+    function isAdmin() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Fonction helper pour vérifier si c'est le propriétaire
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Collection users
+    match /users/{userId} {
+      // Lecture : utilisateur connecté peut lire son propre profil, admin peut tout lire
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Création : lors de l'inscription, l'utilisateur peut créer son propre document
+      allow create: if isAuthenticated() && 
+                       request.auth.uid == userId &&
+                       request.resource.data.role == 'user'; // Empêche auto-promotion en admin
+      
+      // Mise à jour : utilisateur peut modifier son profil (sauf le role), admin peut tout modifier
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || 
+                       isAdmin();
+      
+      // Suppression : seulement admin
+      allow delete: if isAdmin();
+    }
+    
+    // Collection products
+    match /products/{productId} {
+      // Lecture : tout le monde peut lire les produits
+      allow read: if true;
+      
+      // Écriture : seulement admin
+      allow write: if isAdmin();
+    }
+    
+    // Collection favorites
+    match /favorites/{favoriteId} {
+      // Lecture : utilisateur peut lire ses propres favoris, admin peut tout lire
+      allow read: if isAuthenticated() && 
+                     (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Création : utilisateur connecté peut créer ses favoris
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid;
+      
+      // Suppression : utilisateur peut supprimer ses favoris, admin peut tout supprimer
+      allow delete: if isAuthenticated() && 
+                       (resource.data.userId == request.auth.uid || isAdmin());
+    }
+    
+    // Collection reservations
+    match /reservations/{reservationId} {
+      // Lecture : utilisateur peut lire ses réservations, admin peut tout lire
+      allow read: if isAuthenticated() && 
+                     (resource.data.userId == request.auth.uid || 
+                      resource.data.guestEmail == request.auth.token.email ||
+                      isAdmin());
+      
+      // Création : tout le monde peut créer une réservation (même invités via guestEmail)
+      allow create: if true;
+      
+      // Suppression : utilisateur peut supprimer ses réservations, admin peut tout supprimer
+      allow delete: if isAuthenticated() && 
+                       (resource.data.userId == request.auth.uid || isAdmin());
+    }
+    
+    // Collection orders
+    match /orders/{orderId} {
+      // Lecture : utilisateur peut lire ses commandes, admin peut tout lire
+      allow read: if isAuthenticated() && 
+                     (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Création : utilisateur connecté peut créer ses commandes
+      allow create: if isAuthenticated();
+      
+      // Mise à jour : seulement admin (pour changer le statut)
+      allow update: if isAdmin();
+      
+      // Suppression : seulement admin
+      allow delete: if isAdmin();
+    }
+    
+    // Collection notifications (si vous en avez une)
+    match /notifications/{notificationId} {
+      // Lecture : utilisateur peut lire ses notifications, admin peut tout lire
+      allow read: if isAuthenticated() && 
+                     (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Création : système backend ou admin
+      allow create: if isAdmin();
+      
+      // Mise à jour : utilisateur peut marquer comme lu, admin peut tout modifier
+      allow update: if isAuthenticated() && 
+                       (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Suppression : utilisateur peut supprimer ses notifications, admin peut tout supprimer
+      allow delete: if isAuthenticated() && 
+                       (resource.data.userId == request.auth.uid || isAdmin());
+    }
+  }
+}
