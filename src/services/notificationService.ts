@@ -58,7 +58,7 @@ class NotificationService {
 
       await addDoc(collection(db, 'mail'), {
         to: [userEmail],
-        from: 'noreply@wafi.sn',
+        from: 'contact@wafi.sn',
         message: {
           subject: 'Bienvenue chez WAFI - Votre compte est actif ! 🎉',
           html: htmlContent,
@@ -216,7 +216,7 @@ class NotificationService {
 
             await addDoc(collection(db, 'mail'), {
               to: [userEmail],
-              from: 'noreply@wafi.sn',
+              from: 'contact@wafi.sn',
               message: {
                 subject: `Le produit "${productName}" est de nouveau disponible ! 🎉`,
                 html: htmlContent,

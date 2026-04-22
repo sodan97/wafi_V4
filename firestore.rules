@@ -109,5 +109,14 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && 
                        (resource.data.userId == request.auth.uid || isAdmin());
     }
+
+    // Collection mail - utilisée par Firebase Extension "Trigger Email"
+    match /mail/{mailId} {
+      // Création : utilisateur connecté peut créer un email (welcome, stock notification)
+      allow create: if isAuthenticated();
+
+      // Lecture/mise à jour/suppression : seulement l'extension (service account) ou admin
+      allow read, update, delete: if isAdmin();
+    }
   }
 }
