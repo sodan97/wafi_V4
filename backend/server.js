@@ -11,24 +11,21 @@ import reservationRoutes from './routes/reservationRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 
 // --- Firebase Initialization ---
-let serviceAccount;
-if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
-  serviceAccount = JSON.parse(
-    Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8')
-  );
-} else {
-  const { default: localKey } = await import('./serviceAccountKey.json', { with: { type: 'json' } });
-  serviceAccount = localKey;
-}
-
 try {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    const serviceAccount = JSON.parse(
+      Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8')
+    );
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+  } else {
+    admin.initializeApp();
+  }
   console.log('✅ Firebase Admin SDK initialized successfully.');
 } catch (error) {
   if (error.code === 'app/duplicate-app') {
-    admin.app(); 
+    admin.app();
   } else {
     console.error('❌ Firebase Admin SDK initialization failed:', error);
     process.exit(1);
