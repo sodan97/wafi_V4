@@ -11,7 +11,7 @@ interface NotificationResult {
 }
 
 class NotificationService {
-  private readonly LOGO_URL = 'https://firebasestorage.googleapis.com/v0/b/projet-wafi-dev.firebasestorage.app/o/logo.png?alt=media&token=92c1230e-2851-4b35-b46e-6fa16de2ae2d';
+  private readonly LOGO_URL = 'https://wafi.sn/logo.png';
   private readonly SHOP_URL = 'https://wafi.sn';
   private readonly CONTACT_EMAIL = 'contact@wafi.sn';
   private readonly CURRENT_YEAR = new Date().getFullYear();
