@@ -1,6 +1,21 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { Order } from '../types';
 import { useAuth } from './AuthContext';
+import { db } from '../src/firebase';
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  orderBy,
+  Timestamp,
+  Query,
+  DocumentData,
+} from 'firebase/firestore';
 
 interface OrderContextType {
   orders: Order[];
@@ -13,8 +28,6 @@ interface OrderContextType {
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
-
-const API_BASE_URL = '/api';
 
 export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -34,29 +47,36 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setIsLoading(true);
     setError(null);
     try {
-      let url = `${API_BASE_URL}/orders`;
+      const ordersRef = collection(db, 'orders');
+      let q: Query<DocumentData>;
 
-      if (currentUser?.role !== 'admin') {
-        url = `${API_BASE_URL}/orders/myorders?userId=${currentUser?.id}`;
+      if (currentUser?.role === 'admin') {
+        q = query(ordersRef, orderBy('date', 'desc'));
+      } else {
+        q = query(ordersRef, where('userId', '==', currentUser?.id), orderBy('date', 'desc'));
       }
 
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
+      const snapshot = await getDocs(q);
+      const data: Order[] = snapshot.docs.map(docSnap => {
+        const d = docSnap.data() as Record<string, any>;
+        return {
+          id: docSnap.id,
+          customer: d.customer,
+          items: d.items,
+          total: d.total,
+          userId: d.userId,
+          status: d.status,
+          date: d.date instanceof Timestamp ? d.date.toDate().toISOString() : d.date,
+          handledBy: d.handledBy,
+          handledByName: d.handledByName,
+        } as Order;
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
       console.log('Fetched orders data:', data);
       setOrders(data);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch orders');
-      console.error("Error fetching orders:", err);
+      console.error('Error fetching orders:', err);
     } finally {
       setIsLoading(false);
     }
@@ -66,25 +86,19 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/orders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
-        body: JSON.stringify(orderData),
-      });
+      const newOrderData = {
+        ...orderData,
+        status: 'pending',
+        date: new Date().toISOString(),
+      };
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const newOrder = await response.json();
+      const docRef = await addDoc(collection(db, 'orders'), newOrderData);
+      const newOrder: Order = { id: docRef.id, ...newOrderData };
       setOrders(prevOrders => [newOrder, ...prevOrders]);
       return newOrder;
     } catch (err: any) {
       setError(err.message || 'Failed to add order');
-      console.error("Error adding order:", err);
+      console.error('Error adding order:', err);
       return undefined;
     } finally {
       setIsLoading(false);
@@ -93,41 +107,30 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const updateOrderStatus = async (orderId: string, newStatus: string, handledByName?: string) => {
     const originalOrders = orders;
-    const updatedOrders = orders.map(order =>
+    setOrders(orders.map(order =>
       order.id === orderId ? { ...order, status: newStatus } : order
-    );
-    setOrders(updatedOrders);
+    ));
     setError(null);
 
     try {
       console.log(`Updating order ID: ${orderId} with status: ${newStatus}`);
-      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
-        body: JSON.stringify({
-          status: newStatus,
-          handledBy: currentUser?.id?.toString() || '',
-          handledByName: handledByName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim()
-        }),
-      });
+      const orderRef = doc(db, 'orders', orderId);
+      const updateData = {
+        status: newStatus,
+        handledBy: currentUser?.id?.toString() || '',
+        handledByName: handledByName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
+      };
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const updatedOrderFromServer = await response.json();
+      await updateDoc(orderRef, updateData);
       setOrders(prevOrders =>
         prevOrders.map(order =>
-          order.id === orderId ? updatedOrderFromServer : order
+          order.id === orderId ? { ...order, ...updateData } : order
         )
       );
     } catch (err: any) {
       setOrders(originalOrders);
       setError(err.message || 'Failed to update order status');
-      console.error("Error updating order status:", err);
+      console.error('Error updating order status:', err);
     }
   };
 
@@ -137,20 +140,11 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      await deleteDoc(doc(db, 'orders', orderId));
     } catch (err: any) {
       setOrders(originalOrders);
       setError(err.message || 'Failed to delete order');
-      console.error("Error deleting order:", err);
+      console.error('Error deleting order:', err);
     }
   };
 

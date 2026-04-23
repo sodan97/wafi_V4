@@ -38,6 +38,15 @@ const App: React.FC = () => {
   const prevUserRef = useRef(currentUser);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get('product');
+    if (productId) {
+      setSelectedProductId(productId);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  useEffect(() => {
     const prevUser = prevUserRef.current;
     if (!prevUser && currentUser) {
       // On login, reset history
