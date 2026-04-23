@@ -153,7 +153,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-pink-100 to-blue-100 text-gray-800">
       <Header setView={setView} onLogoClick={handleLogoClick} />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 mt-16 md:mt-20">
         {!selectedProductId && (
              <NavigationControls
                 onBack={goBack}

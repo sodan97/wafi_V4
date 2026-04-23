@@ -85,7 +85,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductSelect, onN
         aria-label={`Voir les détails pour ${product.name}`}
       >
         <div
-          className="w-full h-64 flex items-center justify-center overflow-hidden relative"
+          className="w-full h-40 sm:h-52 md:h-64 flex items-center justify-center overflow-hidden relative"
           style={{ backgroundImage: `url(${fallbackImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
         >
           <div className="absolute inset-0 backdrop-blur-md" style={{ backgroundImage: `url(${fallbackImage})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(8px)', transform: 'scale(1.1)' }} />
@@ -107,11 +107,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductSelect, onN
           </button>
         )}
       </div>
-      <div className="p-6 flex flex-col flex-grow">
-        <h3 className="text-xl font-semibold text-gray-800 mb-2">{product.name}</h3>
-        <p className="text-gray-600 mb-4 h-12 overflow-hidden flex-grow">{product.description.substring(0, 100)}...</p>
-        <div className="flex justify-between items-center mt-auto pt-4">
-          <p className="text-2xl font-bold text-rose-500">{product.price.toLocaleString('fr-FR')} FCFA</p>
+      <div className="p-3 md:p-6 flex flex-col flex-grow">
+        <h3 className="text-base md:text-xl font-semibold text-gray-800 mb-1 md:mb-2 line-clamp-2">{product.name}</h3>
+        <p className="text-gray-600 mb-2 md:mb-4 text-sm overflow-hidden flex-grow line-clamp-2">{product.description.substring(0, 100)}...</p>
+        <div className="flex justify-between items-center mt-auto pt-2 md:pt-4 flex-wrap gap-2">
+          <p className="text-lg md:text-2xl font-bold text-rose-500">{product.price.toLocaleString('fr-FR')} FCFA</p>
           {currentUser?.role !== 'admin' && renderButton()}
         </div>
       </div>
