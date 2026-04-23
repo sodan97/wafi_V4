@@ -95,20 +95,38 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const updateProduct = useCallback(async (productId: string, productData: Partial<Product>) => {
     try {
+      const currentProduct = products.find(p => p.id === productId);
+      const oldStock = currentProduct?.stock ?? -1;
+
       const productRef = doc(db, 'products', productId);
       await updateDoc(productRef, {
         ...productData,
         updatedAt: new Date().toISOString()
       });
-      
+
       const updatedProductDoc = await getDoc(productRef);
       if (updatedProductDoc.exists()) {
         const updatedProduct: Product = {
           id: updatedProductDoc.id,
           ...updatedProductDoc.data()
         } as Product;
-        
+
         setProducts(prev => prev.map(p => p.id === productId ? updatedProduct : p));
+
+        const newStock = updatedProduct.stock ?? 0;
+        if (oldStock === 0 && newStock > 0) {
+          const productName = updatedProduct.name ?? 'Produit';
+          const productImage = updatedProduct.imageUrls?.[0];
+          console.log(`📧 Triggering notifications for product "${productName}" (stock: ${oldStock} → ${newStock})`);
+          notificationService.notifyStockAvailable(productId, productName, oldStock, newStock, productImage)
+            .then(result => {
+              console.log('✅ Notification result:', result);
+            })
+            .catch(error => {
+              console.error('❌ Error sending notifications:', error);
+            });
+        }
+
         return updatedProduct;
       }
       return null;
@@ -116,7 +134,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.error("Error updating product:", error);
       return null;
     }
-  }, []);
+  }, [products]);
 
   const updateProductStock = useCallback(async (productId: string, newStock: number) => {
     try {
@@ -124,7 +142,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       const currentProduct = products.find(p => p.id === productId);
       const oldStock = currentProduct?.stock ?? 0;
       const productName = currentProduct?.name ?? 'Produit';
-      const productImage = currentProduct?.images?.[0];
+      const productImage = currentProduct?.imageUrls?.[0];
 
       // Mettre à jour le stock dans Firestore
       const productRef = doc(db, 'products', productId);

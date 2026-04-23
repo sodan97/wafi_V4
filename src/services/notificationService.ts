@@ -195,7 +195,7 @@ class NotificationService {
                       Connectez-vous à votre compte WAFI pour passer commande avant qu'il ne soit à nouveau en rupture !
                     </p>
                     <div style="text-align: center; margin: 30px 0;">
-                      <a href="${this.SHOP_URL}" style="display: inline-block; background-color: #4ECDC4; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                      <a href="${this.SHOP_URL}?product=${productId}" style="display: inline-block; background-color: #4ECDC4; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
                         Voir le produit
                       </a>
                     </div>
