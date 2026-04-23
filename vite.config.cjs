@@ -5,9 +5,6 @@ module.exports = defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
-    hmr: {
-      clientPort: 443,
-    },
     proxy: {
       '/api': {
         target: 'http://localhost:5002',

@@ -57,7 +57,7 @@ const Footer: React.FC = () => {
         </div>
 
         <div className="border-t-2 border-emerald-400 mt-4 pt-3 text-center">
-          <p className="text-sm font-semibold text-emerald-100">© 2025 Wafi. Tous droits réservés.</p>
+          <p className="text-sm font-semibold text-emerald-100">© 2026 Wafi. Tous droits réservés.</p>
         </div>
       </div>
     </footer>

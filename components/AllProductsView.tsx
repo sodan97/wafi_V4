@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { useProduct } from '../context/ProductContext';
 import { Product } from '../types';
@@ -15,6 +15,15 @@ const AllProductsView: React.FC<AllProductsViewProps> = ({ onProductSelect, onNo
   const [maxPrice, setMaxPrice] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'none'>('none');
   const [showFilters, setShowFilters] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isDesktop = windowWidth >= 768;
 
   const filteredProducts = useMemo(() => {
     let filtered = activeProducts;
@@ -123,36 +132,43 @@ const AllProductsView: React.FC<AllProductsViewProps> = ({ onProductSelect, onNo
   );
 
   return (
-    <div className="mt-2">
-      <div className="mb-16">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2 border-l-4 border-rose-500 pl-4">
+    <div style={{ marginTop: '8px' }}>
+      <div style={{ marginBottom: '64px' }}>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2 border-l-4 border-rose-500 pl-4">
           Nos Produits
         </h2>
         <p className="text-md text-gray-500 mb-4 pl-5">
           Découvrez notre sélection exclusive de produits de qualité.
         </p>
 
-        {/* Mobile filter toggle button */}
-        <div className="md:hidden mb-4">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            🔍 {showFilters ? 'Masquer les filtres' : 'Afficher les filtres'}
-            <span className="ml-1">{showFilters ? '▲' : '▼'}</span>
-          </button>
-          {showFilters && <div className="mt-3">{filtersPanel}</div>}
-        </div>
+        {!isDesktop && (
+          <div style={{ marginBottom: '16px' }}>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              🔍 {showFilters ? 'Masquer les filtres' : 'Afficher les filtres'}
+              <span style={{ marginLeft: '4px' }}>{showFilters ? '▲' : '▼'}</span>
+            </button>
+            {showFilters && <div style={{ marginTop: '12px' }}>{filtersPanel}</div>}
+          </div>
+        )}
 
-        <div className="flex gap-6">
-          <aside className="w-64 flex-shrink-0 hidden md:block">
-            <div className="sticky top-24">
-              {filtersPanel}
-            </div>
-          </aside>
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+          {isDesktop && (
+            <aside style={{ width: '256px', flexShrink: 0 }}>
+              <div style={{ position: 'sticky', top: '96px' }}>
+                {filtersPanel}
+              </div>
+            </aside>
+          )}
 
-          <div className="flex-1 min-w-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isDesktop ? 'repeat(2, 1fr)' : '1fr',
+              gap: '24px',
+            }}>
               {filteredProducts.map(product => (
                 <ProductCard
                   key={product.id}

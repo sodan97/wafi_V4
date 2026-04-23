@@ -78,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({ setView, onLogoClick }) => {
             <span className="text-xs md:text-sm text-white font-medium hidden sm:inline">
               Salut, <span className="font-bold">{currentUser.firstName}</span>! 👋
             </span>
-            <button onClick={logout} className="text-white font-semibold hover:scale-110 transition-transform px-2 md:px-3 py-1 md:py-2 text-sm rounded-full bg-white/20">Déco.</button>
+            <button onClick={logout} className="text-white font-semibold hover:scale-110 transition-transform px-2 md:px-3 py-1 md:py-2 text-sm rounded-full bg-white/20">Déconnexion</button>
           </>
         ) : (
           <>
