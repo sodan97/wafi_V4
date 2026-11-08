@@ -32,7 +32,10 @@ Backend Express (`backend/`) : il n'est plus utilisé par le site et son déploi
 
 Depuis le 8 novembre 2026, les emails sont envoyés par la fonction `functions/index.js` (l'extension « Trigger Email » a été désinstallée). Le site écrit toujours un document dans la collection `mail`, au même format qu'avant.
 
-- Mot de passe de la boîte OVH `contact@wafi.sn` : dans Secret Manager (`SMTP_PASSWORD`). Pour le changer : `firebase functions:secrets:set SMTP_PASSWORD`, puis redéployer la fonction.
+- Mot de passe de la boîte OVH `contact@wafi.sn` : dans Secret Manager (`SMTP_PASSWORD`). Pour le changer, après l'avoir modifié dans l'espace client OVH :
+  1. `node functions/test-smtp.mjs` : vérifie auprès d'OVH que le mot de passe est accepté, sans envoyer d'email (saisie masquée, rien n'est enregistré).
+  2. Seulement si le test répond « OK » : `firebase functions:secrets:set SMTP_PASSWORD`, et répondre **Yes** quand Firebase propose de redéployer la fonction (elle garde la version du mot de passe connue lors du déploiement).
+  3. Facultatif : détruire l'ancienne version avec `firebase functions:secrets:destroy SMTP_PASSWORD@<n> -f`. Firebase annonce à tort qu'elle est « in use » : il ne regarde que le nom du secret, pas la version.
 - Autres réglages (serveur, port, expéditeur) : `functions/.env.projet-wafi-dev`.
 - Déployer : `firebase deploy --only functions`. Sur un ordinateur lent, l'analyse du code peut dépasser 10 s : définir `FUNCTIONS_DISCOVERY_TIMEOUT=60` avant la commande.
 - Vérifier un envoi : dans Firestore, le document `mail` passe à `delivery.state = SUCCESS` (ou `ERROR` avec le message dans `delivery.error`).
