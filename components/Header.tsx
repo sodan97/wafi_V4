@@ -76,12 +76,12 @@ const Header: React.FC<HeaderProps> = ({ setView, onLogoClick }) => {
 
             {currentUser ? (
               <div className="hidden items-center gap-2 md:flex">
-                <span className="ml-2 flex items-center gap-2 text-sm font-medium text-ink-700">
+                <button onClick={() => go('profile')} className="ml-2 flex items-center gap-2 rounded-full py-1 pl-1 pr-1 text-sm font-medium text-ink-700 transition-colors hover:bg-brand-50 hover:text-brand-700 lg:pr-3" aria-label="Mon profil" title="Mon profil">
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sun-200 font-display text-base font-semibold text-ink-900">
                     {currentUser.firstName?.charAt(0).toUpperCase() || '?'}
                   </span>
-                  <span className="hidden lg:inline">{currentUser.firstName}</span>
-                </span>
+                  <span className="hidden lg:inline">{currentUser.firstName || 'Mon profil'}</span>
+                </button>
                 <button onClick={logout} className={iconButton} aria-label="Se déconnecter" title="Se déconnecter">
                   <LogOutIcon className="h-5 w-5" />
                 </button>
@@ -114,6 +114,9 @@ const Header: React.FC<HeaderProps> = ({ setView, onLogoClick }) => {
               )}
               {currentUser && (
                 <li><button onClick={() => go('orders')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold text-ink-900 hover:bg-brand-50"><PackageIcon className="h-5 w-5 text-brand-600" />Mes commandes</button></li>
+              )}
+              {currentUser && (
+                <li><button onClick={() => go('profile')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold text-ink-900 hover:bg-brand-50"><UserIcon className="h-5 w-5 text-brand-600" />Mon profil</button></li>
               )}
               {isAdmin && (
                 <li><button onClick={() => go('admin')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold text-ink-900 hover:bg-brand-50"><DashboardIcon className="h-5 w-5 text-brand-600" />Administration</button></li>

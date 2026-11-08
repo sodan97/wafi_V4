@@ -8,6 +8,7 @@ import DataTable from './DataTable';
 import AddProductModal from './AddProductModal';
 import EditProductModal from './EditProductModal';
 import { Product } from '../types';
+import { formatPhone } from '../src/utils/phone';
 
 const ProductManager: React.FC = () => {
     const { products, updateProductStock, updateProductStatus, deleteProduct, restoreProduct, permanentlyDeleteProduct } = useProduct();
@@ -447,7 +448,7 @@ const OrderManager: React.FC = () => {
             firstName: order.customer?.firstName,
             lastName: order.customer.lastName,
             email: order.customer?.email || user?.email || '-',
-            phone: order.customer.phone,
+            phone: formatPhone(order.customer.phone),
             date: new Date(order.date).toLocaleDateString('fr-FR'),
             time: new Date(order.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
             total: order.total.toLocaleString('fr-FR'),
@@ -509,7 +510,8 @@ const ReservationManager: React.FC = () => {
                 .filter(o => o.userId === res.userId)
                 .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
             
-                const userPhone = userOrders.length > 0 ? userOrders[0]?.customer?.phone ?? 'N/A' : 'N/A';
+                // Numéro du profil s'il existe, sinon celui de la dernière commande
+                const userPhone = formatPhone(user?.phone || userOrders[0]?.customer?.phone) || 'N/A';
 
 
             return {

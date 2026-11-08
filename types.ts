@@ -21,6 +21,15 @@ export interface User {
   firstName: string;
   lastName: string;
   role: string | 'admin' | 'user';
+  phone?: string;   // format international (+221771234567), facultatif
+  address?: string; // adresse de livraison habituelle, facultative
+}
+
+export interface ProfileUpdate {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  address: string;
 }
 
 export interface Order {

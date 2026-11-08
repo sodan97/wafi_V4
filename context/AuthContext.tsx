@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { User } from '../types';
+import { User, ProfileUpdate } from '../types';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -8,10 +8,15 @@ import {
   User as FirebaseUser,
   GoogleAuthProvider,
   signInWithPopup,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  updatePassword,
+  deleteUser,
 } from 'firebase/auth';
 import { auth, db } from '../src/firebase';
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where, DocumentData } from 'firebase/firestore';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -21,11 +26,53 @@ interface AuthContextType {
   logout: () => Promise<void>;
   register: (userData: Omit<User, 'id' | 'role'>) => Promise<User | null>;
   resetPassword: (email: string) => Promise<void>;
+  updateProfile: (data: ProfileUpdate) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  deleteAccount: (currentPassword?: string) => Promise<void>;
+  hasPasswordLogin: boolean;
   isLoadingAuth: boolean;
   authError: Error | string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const toUser = (firebaseUser: FirebaseUser, data: DocumentData): User => ({
+  id: firebaseUser.uid,
+  email: firebaseUser.email || '',
+  firstName: data.firstName || '',
+  lastName: data.lastName || '',
+  role: data.role || 'user',
+  phone: data.phone || '',
+  address: data.address || '',
+  password: '',
+});
+
+// Le compte se connecte-t-il avec un mot de passe (et pas seulement avec Google) ?
+const usesPassword = (firebaseUser: FirebaseUser | null) =>
+  !!firebaseUser?.providerData.some(p => p.providerId === 'password');
+
+// Messages d'erreur lisibles pour la vérification d'identité avant une action sensible
+const reauthErrorMessage = (error: any): string => {
+  switch (error?.code) {
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+    case 'auth/invalid-login-credentials':
+      return 'Mot de passe actuel incorrect.';
+    case 'auth/too-many-requests':
+      return 'Trop de tentatives. Réessayez dans quelques minutes.';
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+      return 'Vérification Google annulée.';
+    case 'auth/popup-blocked':
+      return 'La fenêtre Google a été bloquée par le navigateur. Autorisez les fenêtres pop-up et réessayez.';
+    case 'auth/user-mismatch':
+      return 'Choisissez le même compte Google que celui de votre compte WAFI.';
+    case 'auth/network-request-failed':
+      return 'Pas de connexion internet. Réessayez.';
+    default:
+      return error?.message || 'Une erreur est survenue. Réessayez.';
+  }
+};
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -37,24 +84,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       setIsLoadingAuth(true);
       setAuthError(null);
-      
+
       try {
         if (firebaseUser) {
           const userDocRef = doc(db, 'users', firebaseUser.uid);
           const userDoc = await getDoc(userDocRef);
-          
+
           if (userDoc.exists()) {
-            const userData = userDoc.data();
-            const user: User = {
-              id: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              firstName: userData.firstName || '',
-              lastName: userData.lastName || '',
-              role: userData.role || 'user',
-              password: ''
-            };
+            const user = toUser(firebaseUser, userDoc.data());
             setCurrentUser(user);
-            
+
             if (user.role === 'admin') {
               await fetchUsers();
             }
@@ -100,27 +139,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
-      
+
       const userDocRef = doc(db, 'users', firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
-      
+
       if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const user: User = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email || '',
-          firstName: userData.firstName || '',
-          lastName: userData.lastName || '',
-          role: userData.role || 'user',
-          password: ''
-        };
-        
+        const user = toUser(firebaseUser, userDoc.data());
+
         setCurrentUser(user);
-        
+
         if (user.role === 'admin') {
           await fetchUsers();
         }
-        
+
         return user;
       } else {
         throw new Error('Données utilisateur introuvables');
@@ -128,7 +159,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error: any) {
       console.error("Login error:", error);
       let errorMessage = 'Email ou mot de passe incorrect';
-      
+
       if (error.code === 'auth/user-not-found') {
         errorMessage = 'Aucun compte trouvé avec cet email';
       } else if (error.code === 'auth/wrong-password') {
@@ -140,7 +171,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else if (error.code === 'auth/invalid-credential') {
         errorMessage = 'Email ou mot de passe incorrect';
       }
-      
+
       setAuthError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -241,15 +272,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       let user: User;
 
       if (userDoc.exists()) {
-        const userData = userDoc.data();
-        user = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email || '',
-          firstName: userData.firstName || '',
-          lastName: userData.lastName || '',
-          role: userData.role || 'user',
-          password: ''
-        };
+        user = toUser(firebaseUser, userDoc.data());
       } else {
         const displayNameParts = firebaseUser.displayName?.split(' ') || ['', ''];
         const firstName = displayNameParts[0] || '';
@@ -324,8 +347,80 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // ---------- Profil ----------
+
+  const requireFirebaseUser = (): FirebaseUser => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) throw new Error('Votre session a expiré. Reconnectez-vous.');
+    return firebaseUser;
+  };
+
+  const updateProfile = async (data: ProfileUpdate): Promise<void> => {
+    const firebaseUser = requireFirebaseUser();
+    try {
+      await updateDoc(doc(db, 'users', firebaseUser.uid), { ...data, updatedAt: new Date().toISOString() });
+    } catch (error: any) {
+      console.error('Profile update error:', error);
+      throw new Error('Vos informations n’ont pas pu être enregistrées. Réessayez.');
+    }
+    setCurrentUser(prev => (prev ? { ...prev, ...data } : prev));
+  };
+
+  // Firebase exige une connexion récente avant de changer le mot de passe ou de supprimer le compte
+  const reauthenticate = async (firebaseUser: FirebaseUser, currentPassword?: string) => {
+    try {
+      if (usesPassword(firebaseUser)) {
+        if (!currentPassword) throw Object.assign(new Error('Entrez votre mot de passe actuel.'), { code: 'local/missing-password' });
+        await reauthenticateWithCredential(firebaseUser, EmailAuthProvider.credential(firebaseUser.email || '', currentPassword));
+      } else {
+        await reauthenticateWithPopup(firebaseUser, new GoogleAuthProvider());
+      }
+    } catch (error: any) {
+      throw new Error(reauthErrorMessage(error));
+    }
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
+    const firebaseUser = requireFirebaseUser();
+    await reauthenticate(firebaseUser, currentPassword);
+    try {
+      await updatePassword(firebaseUser, newPassword);
+    } catch (error: any) {
+      console.error('Password change error:', error);
+      throw new Error(error?.code === 'auth/weak-password'
+        ? 'Ce mot de passe est trop faible.'
+        : 'Le mot de passe n’a pas pu être changé. Réessayez.');
+    }
+  };
+
+  // Supprime le profil, les favoris, les alertes de stock et les notifications, puis le compte.
+  // Les commandes passées sont conservées (suivi des livraisons, comptabilité).
+  const deleteAccount = async (currentPassword?: string): Promise<void> => {
+    const firebaseUser = requireFirebaseUser();
+    await reauthenticate(firebaseUser, currentPassword);
+    const uid = firebaseUser.uid;
+    try {
+      for (const name of ['favorites', 'reservations', 'notifications']) {
+        const snapshot = await getDocs(query(collection(db, name), where('userId', '==', uid)));
+        await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
+      }
+      await deleteDoc(doc(db, 'users', uid));
+      await deleteUser(firebaseUser);
+    } catch (error: any) {
+      console.error('Account deletion error:', error);
+      throw new Error('La suppression n’a pas pu aller jusqu’au bout. Réessayez ou écrivez-nous sur WhatsApp.');
+    }
+    setCurrentUser(null);
+    setUsers([]);
+  };
+
   return (
-    <AuthContext.Provider value={{ currentUser, users, login, loginWithGoogle, logout, register, resetPassword, isLoadingAuth, authError }}>
+    <AuthContext.Provider value={{
+      currentUser, users, login, loginWithGoogle, logout, register, resetPassword,
+      updateProfile, changePassword, deleteAccount,
+      hasPasswordLogin: usesPassword(auth.currentUser),
+      isLoadingAuth, authError,
+    }}>
       {children}
     </AuthContext.Provider>
   );

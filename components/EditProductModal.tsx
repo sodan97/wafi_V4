@@ -206,17 +206,18 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ product, onClose })
             {error && <p className="bg-red-100 text-red-700 p-3 rounded-md text-sm mb-4">{error}</p>}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-                <input type="text" name="name" placeholder="Nom du produit" value={formData.name} onChange={handleChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
+                <p className="text-xs text-gray-500">Les champs marqués d’un <span className="font-semibold text-red-600">*</span> sont obligatoires.</p>
+                <input type="text" name="name" placeholder="Nom du produit *" aria-label="Nom du produit (obligatoire)" value={formData.name} onChange={handleChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
 
-                <textarea name="description" placeholder="Description" value={formData.description} onChange={handleChange} required rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
+                <textarea name="description" placeholder="Description *" aria-label="Description (obligatoire)" value={formData.description} onChange={handleChange} required rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="number" name="price" placeholder="Prix (FCFA)" value={formData.price} onChange={handleChange} required min="0" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
-                    <input type="number" name="stock" placeholder="Stock initial" value={formData.stock} onChange={handleChange} required min="0" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
+                    <input type="number" name="price" placeholder="Prix (FCFA) *" aria-label="Prix (FCFA) (obligatoire)" value={formData.price} onChange={handleChange} required min="0" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
+                    <input type="number" name="stock" placeholder="Stock initial *" aria-label="Stock initial (obligatoire)" value={formData.stock} onChange={handleChange} required min="0" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
                 </div>
 
                 <div>
-                    <input list="categories" name="category" placeholder="Catégorie (existante ou nouvelle)" value={formData.category} onChange={handleChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
+                    <input list="categories" name="category" placeholder="Catégorie (existante ou nouvelle) *" aria-label="Catégorie (existante ou nouvelle) (obligatoire)" value={formData.category} onChange={handleChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
                     <datalist id="categories">
                         {existingCategories.map(cat => <option key={cat} value={cat} />)}
                     </datalist>

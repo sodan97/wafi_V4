@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import Header from './components/Header';
-import CartView from './components/CartView';
 import ProductDetailPage from './components/ProductDetailPage';
 import FavoritesPage from './components/FavoritesPage';
 import { Product } from './types';
@@ -10,13 +9,16 @@ import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
 // Chargée à la demande : les clients ne téléchargent pas le code admin (ni la librairie Excel)
 const AdminPage = lazy(() => import('./components/AdminPage'));
+// Panier/commande et profil : chargés à la demande (ils contiennent la liste des indicatifs de tous les pays)
+const CartView = lazy(() => import('./components/CartView'));
+const ProfilePage = lazy(() => import('./components/ProfilePage'));
 import OrderHistoryPage from './components/OrderHistoryPage';
 import NotificationOptionsModal from './components/NotificationOptionsModal';
 import Footer from './components/Footer';
 import { useAuth } from './context/AuthContext';
 import { useReservation } from './context/ReservationContext';
 
-export type View = 'products' | 'cart' | 'login' | 'register' | 'admin' | 'orders' | 'favorites';
+export type View = 'products' | 'cart' | 'login' | 'register' | 'admin' | 'orders' | 'favorites' | 'profile';
 
 interface HistoryState {
   view: View;
@@ -32,6 +34,8 @@ const App: React.FC = () => {
     setNotificationOptionsProduct(product);
   };
   const [pendingReservationProductId, setPendingReservationProductId] = useState<string | null>(null);
+  // Message affiché en haut de page après une action importante (ex. suppression du compte)
+  const [flashMessage, setFlashMessage] = useState<string | null>(null);
 
   const { currentUser } = useAuth();
   const reservationContext = useReservation();
@@ -75,6 +79,7 @@ const App: React.FC = () => {
     if (location.view === currentLocation.view) {
       return;
     }
+    setFlashMessage(null);
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(location);
     setHistory(newHistory);
@@ -143,6 +148,15 @@ const App: React.FC = () => {
         return currentUser?.role === 'admin' ? <AdminPage /> : <p>Accès non autorisé.</p>;
       case 'orders':
         return currentUser ? <OrderHistoryPage /> : <LoginPage setView={setView} />;
+      case 'profile':
+        return currentUser ? (
+          <ProfilePage
+            onAccountDeleted={() => {
+              setFlashMessage('Votre compte a été supprimé. Merci d’avoir fait confiance à WAFI.');
+              window.scrollTo({ top: 0 });
+            }}
+          />
+        ) : <LoginPage setView={setView} />;
       case 'favorites':
         return currentUser ? (
           <FavoritesPage
@@ -175,6 +189,12 @@ const App: React.FC = () => {
     <div className="flex min-h-screen flex-col bg-cream text-ink-900">
       <Header setView={setView} onLogoClick={handleLogoClick} />
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:py-10">
+        {flashMessage && (
+          <div role="status" className="mb-6 flex items-start justify-between gap-4 rounded-2xl bg-brand-50 px-5 py-4 text-sm font-medium text-brand-700 ring-1 ring-brand-100">
+            <span>{flashMessage}</span>
+            <button onClick={() => setFlashMessage(null)} className="shrink-0 font-semibold hover:underline" aria-label="Fermer le message">Fermer</button>
+          </div>
+        )}
         <Suspense fallback={<div className="flex justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-4 border-brand-100 border-t-brand-600" /></div>}>
           {renderContent()}
         </Suspense>

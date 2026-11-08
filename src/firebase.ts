@@ -1,8 +1,8 @@
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
@@ -27,6 +27,12 @@ try {
   auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
+  // Mode essai local (npm run dev:emulator) : comptes et données de test, rien ne part chez Google
+  if (import.meta.env.VITE_USE_EMULATORS === 'true') {
+    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+    connectFirestoreEmulator(db, '127.0.0.1', 8080);
+    console.log("🧪 Émulateurs Firebase (auth 9099, firestore 8080)");
+  }
   console.log("✅ Firebase Initialized Successfully!");
   console.log("-> App:", app.name);
   console.log("-> Auth instance:", auth.app.name);

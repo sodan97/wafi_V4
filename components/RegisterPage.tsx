@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { View } from '../App';
+import { Required, RequiredLegend } from './FormParts';
+import { validateName, validateNewPassword } from '../src/utils/validation';
 
 interface RegisterPageProps {
   setView: (view: View) => void;
@@ -41,14 +43,10 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setView }) => {
     let error = '';
     switch (name) {
       case 'firstName':
+        error = validateName(value, 'prénom');
+        break;
       case 'lastName':
-        if (!value.trim()) {
-          error = 'Ce champ est requis.';
-        } else if (value.trim().length < 2) {
-          error = 'Doit contenir au moins 2 caractères.';
-        } else if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(value)) {
-           error = 'Seules les lettres, espaces, apostrophes et tirets sont autorisés.';
-        }
+        error = validateName(value, 'nom');
         break;
       case 'email':
         if (!value.trim()) {
@@ -58,13 +56,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setView }) => {
         }
         break;
       case 'password':
-        if (!value) {
-          error = 'Le mot de passe est requis.';
-        } else if (value.length < 8) {
-          error = 'Le mot de passe doit contenir au moins 8 caractères.';
-        } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
-          error = 'Le mot de passe doit contenir au moins une minuscule, une majuscule et un chiffre.';
-        }
+        error = validateNewPassword(value);
         break;
       default:
         break;
@@ -192,7 +184,8 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setView }) => {
 
   return (
     <div className="mx-auto max-w-md rounded-[2rem] bg-white p-6 ring-1 ring-ink-900/5 sm:p-10">
-      <h2 className="text-3xl font-semibold text-center text-ink-900 mb-6">Créer un compte</h2>
+      <h2 className="text-3xl font-semibold text-center text-ink-900">Créer un compte</h2>
+      <RequiredLegend className="mt-2 mb-6 text-center" />
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -203,10 +196,11 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setView }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="firstName" className="block text-sm font-medium text-ink-700 mb-1">
-              Prénom <span className="text-red-500">*</span>
+              Prénom<Required />
             </label>
             <input
               type="text"
+              id="firstName"
               name="firstName"
               placeholder="Votre prénom"
               value={formData.firstName}
@@ -228,10 +222,11 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setView }) => {
           
           <div>
             <label htmlFor="lastName" className="block text-sm font-medium text-ink-700 mb-1">
-              Nom <span className="text-red-500">*</span>
+              Nom<Required />
             </label>
             <input
               type="text"
+              id="lastName"
               name="lastName"
               placeholder="Votre nom"
               value={formData.lastName}
@@ -254,10 +249,11 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setView }) => {
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-ink-700 mb-1">
-            Email <span className="text-red-500">*</span>
+            Email<Required />
           </label>
           <input
             type="email"
+            id="email"
             name="email"
             placeholder="votre@email.com"
             value={formData.email}
@@ -279,11 +275,12 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ setView }) => {
 
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-ink-700 mb-1">
-            Mot de passe <span className="text-red-500">*</span>
+            Mot de passe<Required />
           </label>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
+              id="password"
               name="password"
               placeholder="Votre mot de passe"
               value={formData.password}

@@ -16,6 +16,25 @@ npm run dev          # http://localhost:5173
 
 Variables du front : `.env.development` / `.env.production` (clés web Firebase, publiques par nature).
 
+### Essai local sans toucher au vrai site (émulateurs)
+
+Pour tester comptes, profil, commandes et règles de sécurité avec des données factices :
+
+```bash
+npx firebase-tools@13.35.1 emulators:start --only auth,firestore --project demo-wafi   # terminal 1
+npm run dev:emulator                                                                   # terminal 2
+```
+
+Le mode `emulator` (`.env.emulator`) branche le site sur les émulateurs locaux : un projet `demo-…` ne peut pas atteindre les serveurs Google. La base démarre vide (ajouter des produits pour tester une commande). firebase-tools 13 est utilisé car les versions récentes exigent Java 21.
+
+## Comptes clients
+
+- **Mon profil** (menu du compte) : prénom, nom, téléphone WhatsApp et adresse de livraison, qui pré-remplissent les commandes. L'email ne se modifie pas depuis le site.
+- **Téléphone** : tous les pays sont acceptés (choix du pays puis numéro), enregistré au format international `+33612345678`. Vérification par `libphonenumber-js` (`src/utils/phone.ts`).
+- **Mot de passe** : changement après saisie du mot de passe actuel ; les comptes Google n'ont pas de mot de passe WAFI.
+- **Suppression du compte** : supprime le profil, les favoris, les alertes de stock et les notifications, puis le compte. Les commandes passées sont conservées (suivi, comptabilité).
+- Les champs obligatoires de tous les formulaires sont marqués d'un astérisque rouge.
+
 ## Déploiement
 
 Toujours vérifier le projet actif : `firebase use` doit afficher `projet-wafi-dev`.

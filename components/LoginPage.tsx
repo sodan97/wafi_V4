@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { View } from '../App';
+import { Required, RequiredLegend } from './FormParts';
 
 interface LoginPageProps {
   setView: (view: View) => void;
@@ -150,7 +151,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
     <div className="mx-auto max-w-md rounded-[2rem] bg-white p-6 ring-1 ring-ink-900/5 sm:p-10">
       {!showForgotPassword ? (
         <>
-          <h2 className="text-3xl font-semibold text-center text-ink-900 mb-6">Connexion</h2>
+          <h2 className="text-3xl font-semibold text-center text-ink-900">Connexion</h2>
+          <RequiredLegend className="mt-2 mb-6 text-center" />
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -160,7 +162,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-ink-700 mb-1">
-                Email <span className="text-red-500">*</span>
+                Email<Required />
               </label>
               <input
                 type="email"
@@ -185,7 +187,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-ink-700 mb-1">
-                Mot de passe <span className="text-red-500">*</span>
+                Mot de passe<Required />
               </label>
               <div className="relative">
                 <input
@@ -347,7 +349,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
 
             <div>
               <label htmlFor="reset-email" className="block text-sm font-medium text-ink-700 mb-1">
-                Email <span className="text-red-500">*</span>
+                Email<Required />
               </label>
               <input
                 type="email"

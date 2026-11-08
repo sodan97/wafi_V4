@@ -5,6 +5,7 @@ import { View } from '../App';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../src/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import { Required, RequiredLegend } from './FormParts';
 
 interface NotificationOptionsModalProps {
   product: Product;
@@ -122,10 +123,13 @@ const NotificationOptionsModal: React.FC<NotificationOptionsModalProps> = ({
       <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
         <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
           <h2 className="text-xl font-bold mb-4">Notification par Email</h2>
-          <p className="mb-4 text-ink-500">Entrez votre adresse email pour être notifié :</p>
+          <p className="mb-2 text-ink-500">Entrez votre adresse email pour être notifié :</p>
+          <RequiredLegend className="mb-4" />
 
-          <form onSubmit={handleGuestEmailSubmit}>
+          <form onSubmit={handleGuestEmailSubmit} noValidate>
+            <label htmlFor="guest-email" className="mb-1.5 block text-sm font-semibold text-ink-700">Adresse e-mail<Required /></label>
             <input
+              id="guest-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

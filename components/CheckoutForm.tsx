@@ -4,13 +4,13 @@ import { useOrder } from '../context/OrderContext';
 import { useProduct } from '../context/ProductContext';
 import { CartItem } from '../types';
 import { WhatsAppIcon } from './icons';
+import { checkPhone, splitPhone, PhoneParts } from '../src/utils/phone';
+import { validateName, MAX_ADDRESS_LENGTH } from '../src/utils/validation';
+import { Required, Optional, RequiredLegend, FieldError, inputClass, labelClass } from './FormParts';
+import { PhoneInput } from './PhoneInput';
 
-// Mobiles (70, 75, 76, 77, 78) et fixes (33) sénégalais, avec ou sans indicatif +221
-const SENEGAL_PHONE_REGEX = /^(\+221)?(7[05678]|33)\d{7}$/;
 // Limite imposée par les règles Firestore (vérification du prix de chaque produit)
 const MAX_DISTINCT_ITEMS = 10;
-
-const normalizePhone = (phone: string) => phone.replace(/[\s.-]/g, '').replace(/^00221/, '+221');
 
 interface CheckoutFormProps {
   cartItems: CartItem[];
@@ -19,97 +19,84 @@ interface CheckoutFormProps {
 }
 
 const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, totalPrice, onOrderSuccess }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, updateProfile } = useAuth();
   const { addOrder } = useOrder();
   const { products } = useProduct();
 
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    address: '',
-    phone: ''
+    address: ''
   });
+  const [phone, setPhone] = useState<PhoneParts>(() => splitPhone(currentUser?.phone));
   const [errors, setErrors] = useState({
     firstName: '',
     lastName: '',
-    address: '',
     phone: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Client connecté : proposer d'enregistrer numéro et adresse pour les prochaines commandes
+  const isClient = !!currentUser && currentUser.role !== 'admin';
+  const [saveToProfile, setSaveToProfile] = useState(!currentUser?.phone);
+
+  // Pré-remplissage avec le profil (sans écraser ce que le client a déjà tapé)
   useEffect(() => {
     if (currentUser) {
       setFormData(prev => ({
-        ...prev,
-        firstName: currentUser.firstName,
-        lastName: currentUser.lastName,
+        firstName: prev.firstName || currentUser.firstName,
+        lastName: prev.lastName || currentUser.lastName,
+        address: prev.address || currentUser.address || '',
       }));
+      if (currentUser.phone) {
+        setPhone(prev => (prev.national ? prev : splitPhone(currentUser.phone)));
+      }
     }
   }, [currentUser]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear previous error for the field when it's changed
     setErrors(prev => ({ ...prev, [name]: '' }));
   };
-  
+
+  const handlePhoneChange = (value: PhoneParts) => {
+    setPhone(value);
+    setErrors(prev => ({ ...prev, phone: '' }));
+  };
+
+  // Renvoie le numéro vérifié si tout le formulaire est correct, sinon null (et affiche les erreurs)
   const validateForm = () => {
-    const newErrors = { firstName: '', lastName: '', address: '', phone: '' };
-    let isValid = true;
-
-    // First Name validation: only letters and spaces, not empty
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'Le prénom est requis.';
-      isValid = false;
-    } else if (!/^[a-zA-Z\sÀàÂâÄäÈèÉéÊêËëÎîÏïÔôÖöÙùÛûÜüÇç'-]+$/.test(formData.firstName)) {
-      newErrors.firstName = 'Le prénom ne doit contenir que des lettres.';
-      isValid = false;
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Le nom est requis.';
-      isValid = false;
-    } else if (!/^[a-zA-Z\sÀàÂâÄäÈèÉéÊêËëÎîÏïÔôÖöÙùÛûÜüÇç'-]+$/.test(formData.lastName)) {
-      newErrors.lastName = 'Le nom ne doit contenir que des lettres.';
-      isValid = false;
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Le numéro de téléphone est requis.';
-      isValid = false;
-    } else if (!SENEGAL_PHONE_REGEX.test(normalizePhone(formData.phone))) {
-      newErrors.phone = 'Numéro invalide. Exemple : 77 123 45 67 ou +221 77 123 45 67.';
-      isValid = false;
-    }
+    const phoneCheck = checkPhone(phone);
+    const newErrors = {
+      firstName: validateName(formData.firstName, 'prénom'),
+      lastName: validateName(formData.lastName, 'nom'),
+      phone: phoneCheck.valid ? '' : phoneCheck.error,
+    };
+    setErrors(newErrors);
 
     if (cartItems.length > MAX_DISTINCT_ITEMS) {
       alert(`Une commande peut contenir au maximum ${MAX_DISTINCT_ITEMS} produits différents. Passez le reste dans une seconde commande.`);
-      isValid = false;
+      return null;
     }
-
-    setErrors(newErrors);
-    return isValid;
+    if (Object.values(newErrors).some(Boolean) || !phoneCheck.valid) return null;
+    return phoneCheck;
   };
 
-  const isFormCurrentlyValid =
-    !errors.firstName &&
-    !errors.lastName &&
-    !errors.phone &&
-    formData.firstName.trim() !== '' &&
-    formData.lastName.trim() !== '' &&
-    formData.phone.trim() !== '';
-
-  const formatOrderMessage = (items: { productId: string; name: string; price: number; quantity: number }[], total: number) => {
+  const formatOrderMessage = (
+    items: { productId: string; name: string; price: number; quantity: number }[],
+    total: number,
+    phoneDisplay: string
+  ) => {
     const customerInfoParts = [
       '*Nouvelle Commande Wafi*',
       '-----------------------------',
-      `*Client:* ${formData.firstName} ${formData.lastName}`,
-      `*Téléphone:* ${formData.phone}`
+      `*Client:* ${formData.firstName.trim()} ${formData.lastName.trim()}`,
+      `*Téléphone:* ${phoneDisplay}`
     ];
 
-    if (formData.address) {
-      customerInfoParts.push(`*Adresse:* ${formData.address}`);
+    if (formData.address.trim()) {
+      customerInfoParts.push(`*Adresse:* ${formData.address.trim()}`);
     }
 
     customerInfoParts.push('-----------------------------');
@@ -129,7 +116,9 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, totalPrice, onOr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm() || cartItems.length === 0 || isSubmitting) return;
+    if (cartItems.length === 0 || isSubmitting) return;
+    const phoneCheck = validateForm();
+    if (!phoneCheck) return;
 
     setIsSubmitting(true);
 
@@ -148,7 +137,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, totalPrice, onOr
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
           email: currentUser?.email || '',
-          phone: normalizePhone(formData.phone),
+          phone: phoneCheck.e164,
           address: formData.address.trim()
         },
         items,
@@ -160,7 +149,17 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, totalPrice, onOr
         throw new Error('Order creation failed');
       }
 
-      const summary = formatOrderMessage(items, orderData.total);
+      // Enregistrement facultatif dans le profil : un échec ne bloque pas la commande
+      if (isClient && saveToProfile) {
+        updateProfile({
+          firstName: currentUser?.firstName || orderData.customer.firstName,
+          lastName: currentUser?.lastName || orderData.customer.lastName,
+          phone: phoneCheck.e164,
+          address: orderData.customer.address || currentUser?.address || '',
+        }).catch(err => console.error('Profil non mis à jour :', err));
+      }
+
+      const summary = formatOrderMessage(items, orderData.total, phoneCheck.international);
       onOrderSuccess(summary);
     } catch (error) {
       console.error('Erreur lors de la création de la commande:', error);
@@ -169,37 +168,45 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, totalPrice, onOr
       setIsSubmitting(false);
     }
   };
-  
-  const inputClass = (hasError: boolean) =>
-    `mt-1.5 block w-full rounded-xl border-0 bg-cream px-4 py-3 text-ink-900 ring-1 placeholder:text-ink-500/60 focus:outline-none focus:ring-2 ${hasError ? 'ring-red-400 focus:ring-red-500' : 'ring-ink-900/10 focus:ring-brand-400'}`;
-  const labelClass = 'block text-sm font-semibold text-ink-700';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <RequiredLegend />
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="firstName" className={labelClass}>Prénom</label>
-          <input type="text" id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} required autoComplete="given-name" className={inputClass(!!errors.firstName)} />
-          {errors.firstName && <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>}
+          <label htmlFor="firstName" className={labelClass}>Prénom<Required /></label>
+          <input type="text" id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} required autoComplete="given-name" aria-invalid={!!errors.firstName} className={inputClass(!!errors.firstName)} />
+          <FieldError message={errors.firstName} />
         </div>
         <div>
-          <label htmlFor="lastName" className={labelClass}>Nom</label>
-          <input type="text" id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} required autoComplete="family-name" className={inputClass(!!errors.lastName)} />
-          {errors.lastName && <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>}
+          <label htmlFor="lastName" className={labelClass}>Nom<Required /></label>
+          <input type="text" id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} required autoComplete="family-name" aria-invalid={!!errors.lastName} className={inputClass(!!errors.lastName)} />
+          <FieldError message={errors.lastName} />
         </div>
       </div>
+      <PhoneInput
+        id="phone"
+        label="Téléphone (WhatsApp)"
+        value={phone}
+        onChange={handlePhoneChange}
+        required
+        error={errors.phone}
+        hint="Vous êtes à l’étranger ? Choisissez votre pays : tous les numéros sont acceptés."
+      />
       <div>
-        <label htmlFor="phone" className={labelClass}>Téléphone (WhatsApp)</label>
-        <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} required placeholder="77 123 45 67" autoComplete="tel" inputMode="tel" className={inputClass(!!errors.phone)} />
-        {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
+        <label htmlFor="address" className={labelClass}>Adresse de livraison<Optional /></label>
+        <input type="text" id="address" name="address" value={formData.address} onChange={handleChange} maxLength={MAX_ADDRESS_LENGTH} placeholder="Cité Keur Gorgui, Lot 123, Dakar" autoComplete="street-address" className={inputClass(false)} />
+        <p className="mt-1 text-xs text-ink-500">Vous commandez pour un enfant au Sénégal ? Indiquez l’adresse où livrer.</p>
       </div>
-      <div>
-        <label htmlFor="address" className={labelClass}>Adresse de livraison <span className="font-normal text-ink-500">(facultatif)</span></label>
-        <input type="text" id="address" name="address" value={formData.address} onChange={handleChange} placeholder="Cité Keur Gorgui, Lot 123, Dakar" autoComplete="street-address" className={inputClass(false)} />
-      </div>
+      {isClient && (
+        <label className="flex items-start gap-3 text-sm text-ink-700">
+          <input type="checkbox" checked={saveToProfile} onChange={e => setSaveToProfile(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 rounded accent-brand-600" />
+          <span>Enregistrer ce numéro et cette adresse dans mon profil pour mes prochaines commandes<Optional /></span>
+        </label>
+      )}
       <button
         type="submit"
-        disabled={!isFormCurrentlyValid || cartItems.length === 0 || isSubmitting}
+        disabled={cartItems.length === 0 || isSubmitting}
         className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-4 font-semibold text-white shadow-md shadow-[#25D366]/25 transition hover:bg-[#1fb757] disabled:cursor-not-allowed disabled:bg-ink-500/30 disabled:shadow-none"
       >
         {isSubmitting ? (

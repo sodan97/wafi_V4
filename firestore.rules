@@ -25,6 +25,19 @@ service cloud.firestore {
       return value is string && value.size() <= 254 && value.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$');
     }
 
+    // Téléphone au format international : + puis 6 à 15 chiffres (tous les pays)
+    function isPhone(value) {
+      return value is string && value.matches('^\\+[0-9]{6,15}$');
+    }
+
+    function profileOk(d) {
+      return isShortString(d.firstName, 100) && d.firstName.size() > 0 &&
+             isShortString(d.lastName, 100) && d.lastName.size() > 0 &&
+             (!('phone' in d) || d.phone == '' || isPhone(d.phone)) &&
+             (!('address' in d) || isShortString(d.address, 300)) &&
+             (!('updatedAt' in d) || d.updatedAt is string);
+    }
+
     // ---------- Commandes : validation des articles ----------
     // Les règles n'ont pas de boucle : on vérifie jusqu'à 10 articles (limite de lectures par requête).
     // Chaque article doit avoir le prix réel du produit en base et un stock suffisant.
@@ -89,11 +102,15 @@ service cloud.firestore {
                        request.resource.data.role == 'user' &&
                        request.resource.data.keys().hasOnly(['email', 'firstName', 'lastName', 'role', 'createdAt', 'authProvider']);
 
-      // Mise à jour : l'utilisateur ne peut pas changer son rôle
-      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) ||
+      // Profil : l'utilisateur ne modifie que ses informations personnelles (jamais son rôle ni son email)
+      allow update: if (isOwner(userId) &&
+                        request.resource.data.diff(resource.data).affectedKeys()
+                          .hasOnly(['firstName', 'lastName', 'phone', 'address', 'updatedAt']) &&
+                        profileOk(request.resource.data)) ||
                        isAdmin();
 
-      allow delete: if isAdmin();
+      // Suppression du compte par son propriétaire (ou par l'admin)
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     match /products/{productId} {
