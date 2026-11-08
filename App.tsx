@@ -1,20 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import Header from './components/Header';
 import CartView from './components/CartView';
 import ProductDetailPage from './components/ProductDetailPage';
 import FavoritesPage from './components/FavoritesPage';
 import { Product } from './types';
-import HeroStatic from './components/HeroStatic';
+import HeroStatic, { HowToOrder } from './components/HeroStatic';
 import AllProductsView from './components/AllProductsView';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
-import AdminPage from './components/AdminPage';
+// Chargée à la demande : les clients ne téléchargent pas le code admin (ni la librairie Excel)
+const AdminPage = lazy(() => import('./components/AdminPage'));
 import OrderHistoryPage from './components/OrderHistoryPage';
 import NotificationOptionsModal from './components/NotificationOptionsModal';
 import Footer from './components/Footer';
 import { useAuth } from './context/AuthContext';
 import { useReservation } from './context/ReservationContext';
-import NavigationControls from './components/NavigationControls';
 
 export type View = 'products' | 'cart' | 'login' | 'register' | 'admin' | 'orders' | 'favorites';
 
@@ -79,6 +79,9 @@ const App: React.FC = () => {
     newHistory.push(location);
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
+    // Le bouton « retour » du téléphone/navigateur revient à la page précédente du site
+    window.history.pushState({ wafi: true }, '');
+    window.scrollTo({ top: 0 });
   };
 
   const goBack = () => {
@@ -87,14 +90,20 @@ const App: React.FC = () => {
     }
   };
 
-  const goForward = () => {
-    if (historyIndex < history.length - 1) {
-      setHistoryIndex(prevIndex => prevIndex + 1);
+  // Bouton « retour » du navigateur : ferme la fiche produit, sinon revient à la vue précédente
+  const popStateRef = useRef<() => void>(() => {});
+  popStateRef.current = () => {
+    if (selectedProductId) {
+      setSelectedProductId(null);
+    } else {
+      goBack();
     }
   };
-
-  const canGoBack = historyIndex > 0;
-  const canGoForward = historyIndex < history.length - 1;
+  useEffect(() => {
+    const onPopState = () => popStateRef.current();
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   const setView = (view: View) => {
     setSelectedProductId(null); // Fix: Always clear product detail view when changing main view
@@ -112,6 +121,8 @@ const App: React.FC = () => {
 
   const navigateToProductPage = (id: string) => {
     setSelectedProductId(id);
+    window.history.pushState({ wafi: true }, '');
+    window.scrollTo({ top: 0 });
   };
 
   const handleContinueShopping = () => {
@@ -154,24 +165,19 @@ const App: React.FC = () => {
           <>
             <HeroStatic />
             <AllProductsView onProductSelect={navigateToProductPage} onNotifyMeClick={handleNotifyMeClick} />
+            <HowToOrder />
           </>
         );
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-pink-100 to-blue-100 text-gray-800">
+    <div className="flex min-h-screen flex-col bg-cream text-ink-900">
       <Header setView={setView} onLogoClick={handleLogoClick} />
-      <main className="container mx-auto px-4 py-8 mt-16 md:mt-20">
-        {!selectedProductId && (
-             <NavigationControls
-                onBack={goBack}
-                onForward={goForward}
-                canGoBack={canGoBack}
-                canGoForward={canGoForward}
-             />
-        )}
-        {renderContent()}
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:py-10">
+        <Suspense fallback={<div className="flex justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-4 border-brand-100 border-t-brand-600" /></div>}>
+          {renderContent()}
+        </Suspense>
       </main>
       <Footer />
       {notificationOptionsProduct && (

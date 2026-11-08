@@ -1,3 +1,104 @@
 @import "tailwindcss";
 @source "../App.tsx";
 @source "../components/**/*.{tsx,ts,jsx,js}";
+@source "../context/**/*.{tsx,ts}";
+
+/* Charte WAFI : couleurs tirées du logo (turquoise, soleil, orange, marine) */
+@theme {
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-poppins: 'Poppins', sans-serif;
+  --font-display: 'Fredoka', 'Poppins', ui-rounded, sans-serif;
+
+  --color-brand-50: #eaf8f8;
+  --color-brand-100: #cdeff0;
+  --color-brand-200: #9fdfe2;
+  --color-brand-300: #67c9ce;
+  --color-brand-400: #2fafb6;
+  --color-brand-500: #12959e;
+  --color-brand-600: #0e7c84;
+  --color-brand-700: #0d646b;
+  --color-brand-800: #0f5157;
+  --color-brand-900: #0f3f44;
+
+  --color-sun-100: #fff4cc;
+  --color-sun-200: #ffe58a;
+  --color-sun-300: #ffd95a;
+  --color-sun-400: #ffc727;
+  --color-sun-500: #f5b700;
+
+  --color-tangerine-100: #feead6;
+  --color-tangerine-400: #f7a24f;
+  --color-tangerine-500: #f28c28;
+  --color-tangerine-600: #db7110;
+
+  --color-ink-500: #5a7090;
+  --color-ink-700: #2c4b73;
+  --color-ink-900: #17365d;
+
+  --color-cream: #fffaf1;
+
+  --animate-fade-in: fade-in 0.4s ease-out both;
+  --animate-pop: pop 0.35s ease-out;
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-cream text-ink-900;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+  }
+
+  button:not(:disabled), [role="button"] {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-brand-300);
+    outline-offset: 2px;
+  }
+}
+
+/* Défilement horizontal sans barre visible (catégories, miniatures) */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Barre de défilement */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f4efe4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c9c2b2;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a9a291;
+}

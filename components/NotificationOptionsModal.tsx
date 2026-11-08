@@ -86,16 +86,16 @@ const NotificationOptionsModal: React.FC<NotificationOptionsModalProps> = ({
 
   if (showWhatsAppQR) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
         <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 text-center">
           <h2 className="text-xl font-bold mb-4">Notification WhatsApp</h2>
-          <p className="mb-4 text-gray-600">Scannez ce code QR avec votre téléphone pour envoyer le message :</p>
+          <p className="mb-4 text-ink-500">Scannez ce code QR avec votre téléphone pour envoyer le message :</p>
 
           <div className="flex justify-center mb-4">
             <QRCodeCanvas value={whatsappUrl} size={200} fgColor="#25D366" />
           </div>
 
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-ink-500 mb-4">
             Ou cliquez sur le bouton ci-dessous sur votre téléphone :
           </p>
 
@@ -108,7 +108,7 @@ const NotificationOptionsModal: React.FC<NotificationOptionsModalProps> = ({
 
           <button
             onClick={() => setShowWhatsAppQR(false)}
-            className="w-full text-gray-600 hover:text-gray-800 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            className="w-full text-ink-500 hover:text-ink-900 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
           >
             Retour
           </button>
@@ -119,10 +119,10 @@ const NotificationOptionsModal: React.FC<NotificationOptionsModalProps> = ({
 
   if (showEmailForm) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
         <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
           <h2 className="text-xl font-bold mb-4">Notification par Email</h2>
-          <p className="mb-4 text-gray-600">Entrez votre adresse email pour être notifié :</p>
+          <p className="mb-4 text-ink-500">Entrez votre adresse email pour être notifié :</p>
 
           <form onSubmit={handleGuestEmailSubmit}>
             <input
@@ -152,7 +152,7 @@ const NotificationOptionsModal: React.FC<NotificationOptionsModalProps> = ({
             <button
               type="button"
               onClick={() => setShowEmailForm(false)}
-              className="w-full text-gray-600 hover:text-gray-800 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              className="w-full text-ink-500 hover:text-ink-900 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
             >
               Retour
             </button>
@@ -163,10 +163,10 @@ const NotificationOptionsModal: React.FC<NotificationOptionsModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
         <h2 className="text-xl font-bold mb-4">Notification pour {product.name}</h2>
-        <p className="mb-6 text-gray-600">Choisissez comment vous souhaitez être notifié lorsque ce produit sera de nouveau disponible :</p>
+        <p className="mb-6 text-ink-500">Choisissez comment vous souhaitez être notifié lorsque ce produit sera de nouveau disponible :</p>
 
         <button
           onClick={() => setShowWhatsAppQR(true)}
@@ -197,7 +197,7 @@ const NotificationOptionsModal: React.FC<NotificationOptionsModalProps> = ({
 
         <button
           onClick={onClose}
-          className="w-full text-gray-600 hover:text-gray-800 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          className="w-full text-ink-500 hover:text-ink-900 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
         >
           Annuler
         </button>

@@ -1,9 +1,18 @@
-
-
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import { Reservation } from '../types';
 import { useAuth } from './AuthContext';
+import { db } from '../src/firebase';
+import {
+  collection,
+  getDocs,
+  addDoc,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  Query,
+  DocumentData,
+} from 'firebase/firestore';
 
 interface ReservationContextType {
   reservations: Reservation[];
@@ -18,8 +27,6 @@ interface ReservationContextType {
 
 const ReservationContext = createContext<ReservationContextType | undefined>(undefined);
 
-const API_BASE_URL = '/api';
-
 export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [isLoadingReservations, setIsLoadingReservations] = useState(false);
@@ -32,18 +39,25 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
     setIsLoadingReservations(true);
     setReservationError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/reservations/mine`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        },
-      });
+      // Les règles Firestore n'autorisent que l'admin à tout lire ; un client ne lit que ses réservations.
+      const reservationsRef = collection(db, 'reservations');
+      const q: Query<DocumentData> = currentUser.role === 'admin'
+        ? reservationsRef
+        : query(reservationsRef, where('userId', '==', currentUser.id));
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setReservations(data);
+      const snapshot = await getDocs(q);
+      setReservations(snapshot.docs.map(docSnap => {
+        const d = docSnap.data();
+        return {
+          id: docSnap.id,
+          productId: d.productId,
+          userId: d.userId,
+          guestEmail: d.guestEmail,
+          notificationMethod: d.notificationMethod,
+          createdAt: d.createdAt,
+          date: d.createdAt || d.date,
+        } as Reservation;
+      }));
     } catch (error: any) {
       setReservationError(error.message || 'An unknown error occurred');
       console.error("Error fetching reservations:", error);
@@ -55,49 +69,35 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
   useEffect(() => {
     if (currentUser) {
       fetchReservations();
+    } else {
+      setReservations([]);
     }
   }, [currentUser, fetchReservations]);
 
   const addReservation = useCallback(async (productId: string, userId: string) => {
-
-    let alreadyReserved = false;
-    setReservations(prev => {
-        alreadyReserved = prev.some(res => res.productId === productId && res.userId === userId);
-        if (alreadyReserved) {
-            console.log("Reservation already exists in local state. No action taken.");
-            return prev;
-        }
-        const newReservation: Reservation = { productId, userId, date: new Date().toISOString() };
-        return [...prev, newReservation];
-    });
-
-    if (alreadyReserved) {
+    if (reservations.some(res => res.productId === productId && res.userId === userId)) {
       return;
     }
 
+    const createdAt = new Date().toISOString();
+    const tempReservation: Reservation = { productId, userId, date: createdAt };
+    setReservations(prev => [...prev, tempReservation]);
+
     try {
-      const response = await fetch(`${API_BASE_URL}/reservations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        },
-        body: JSON.stringify({ productId, userId }),
+      const docRef = await addDoc(collection(db, 'reservations'), {
+        productId,
+        userId,
+        notificationMethod: 'email',
+        createdAt,
+        status: 'pending',
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      }
-
-      await fetchReservations();
-
+      setReservations(prev => prev.map(r => r === tempReservation ? { ...r, id: docRef.id } : r));
     } catch (error: any) {
       setReservationError(error.message);
-      console.error("Error adding reservation to backend:", error);
-      setReservations(prev => prev.filter(r => r.productId !== productId || r.userId !== userId));
+      console.error("Error adding reservation:", error);
+      setReservations(prev => prev.filter(r => r !== tempReservation));
     }
-  }, [fetchReservations]);
+  }, [reservations]);
 
   const hasUserReserved = useCallback((productId: string, userId: string): boolean => {
     return reservations.some(res => res.productId === productId && res.userId === userId);
@@ -112,28 +112,16 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
     setReservations(prev => prev.filter(res => res.productId !== productId));
 
     try {
-        const response = await fetch(`${API_BASE_URL}/reservations/product/${productId}`, {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        await fetchReservations();
-
+      const snapshot = await getDocs(query(collection(db, 'reservations'), where('productId', '==', productId)));
+      await Promise.all(snapshot.docs.map(d => deleteDoc(doc(db, 'reservations', d.id))));
     } catch (error: any) {
-        setReservationError(error.message);
-        console.error("Error removing reservations:", error);
-        setReservations(originalReservations);
+      setReservationError(error.message);
+      console.error("Error removing reservations:", error);
+      setReservations(originalReservations);
     }
-  }, [reservations, fetchReservations]);
+  }, [reservations]);
 
-  const value = useMemo(() => ({ 
+  const value = useMemo(() => ({
     reservations,
     isLoadingReservations,
     reservationError,
@@ -163,7 +151,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
 export const useReservation = () => {
   const context = useContext(ReservationContext);
   if (context === undefined) {
-    throw new Error('useReservation must be used within a ProductProvider');
+    throw new Error('useReservation must be used within a ReservationProvider');
   }
   return context;
 };

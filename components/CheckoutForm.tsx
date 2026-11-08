@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useOrder } from '../context/OrderContext';
+import { useProduct } from '../context/ProductContext';
 import { CartItem } from '../types';
+import { WhatsAppIcon } from './icons';
+
+// Mobiles (70, 75, 76, 77, 78) et fixes (33) sénégalais, avec ou sans indicatif +221
+const SENEGAL_PHONE_REGEX = /^(\+221)?(7[05678]|33)\d{7}$/;
+// Limite imposée par les règles Firestore (vérification du prix de chaque produit)
+const MAX_DISTINCT_ITEMS = 10;
+
+const normalizePhone = (phone: string) => phone.replace(/[\s.-]/g, '').replace(/^00221/, '+221');
 
 interface CheckoutFormProps {
   cartItems: CartItem[];
@@ -12,6 +21,7 @@ interface CheckoutFormProps {
 const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, totalPrice, onOrderSuccess }) => {
   const { currentUser } = useAuth();
   const { addOrder } = useOrder();
+  const { products } = useProduct();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -68,8 +78,13 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, totalPrice, onOr
     if (!formData.phone.trim()) {
       newErrors.phone = 'Le numéro de téléphone est requis.';
       isValid = false;
-    } else if (!/^\d+$/.test(formData.phone)) {
-      newErrors.phone = 'Le numéro de téléphone ne doit contenir que des chiffres.';
+    } else if (!SENEGAL_PHONE_REGEX.test(normalizePhone(formData.phone))) {
+      newErrors.phone = 'Numéro invalide. Exemple : 77 123 45 67 ou +221 77 123 45 67.';
+      isValid = false;
+    }
+
+    if (cartItems.length > MAX_DISTINCT_ITEMS) {
+      alert(`Une commande peut contenir au maximum ${MAX_DISTINCT_ITEMS} produits différents. Passez le reste dans une seconde commande.`);
       isValid = false;
     }
 
@@ -85,7 +100,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, totalPrice, onOr
     formData.lastName.trim() !== '' &&
     formData.phone.trim() !== '';
 
-  const formatOrderMessage = () => {
+  const formatOrderMessage = (items: { productId: string; name: string; price: number; quantity: number }[], total: number) => {
     const customerInfoParts = [
       '*Nouvelle Commande Wafi*',
       '-----------------------------',
@@ -101,12 +116,12 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, totalPrice, onOr
     const customerInfo = customerInfoParts.join('\n');
     const baseUrl = window.location.origin;
 
-    const orderItems = cartItems.map(item => {
-      const productUrl = `${baseUrl}/product/${item.id}`;
+    const orderItems = items.map(item => {
+      const productUrl = `${baseUrl}/?product=${item.productId}`;
       return `*${item.name}* (x${item.quantity})\n- Prix: ${(item.price * item.quantity).toLocaleString('fr-FR')} FCFA\n- Lien du produit: ${productUrl}`;
     }).join('\n\n');
 
-    const totalLine = `*TOTAL: ${totalPrice.toLocaleString('fr-FR')} FCFA*`;
+    const totalLine = `*TOTAL: ${total.toLocaleString('fr-FR')} FCFA*`;
     const closingMessage = '\nMerci de confirmer la commande et de communiquer les modalités de paiement et de livraison.';
 
     return `${customerInfo}\n\n*Détails de la commande:*\n\n${orderItems}\n\n-----------------------------\n${totalLine}${closingMessage}`;
@@ -119,117 +134,87 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, totalPrice, onOr
     setIsSubmitting(true);
 
     try {
+      // Prix du catalogue actuel (le panier peut contenir un ancien prix) : les règles Firestore le vérifient
+      const items = cartItems.map(item => ({
+        productId: String(item.id),
+        name: item.name,
+        price: products.find(p => p.id === item.id)?.price ?? item.price,
+        quantity: item.quantity
+      }));
+
       const orderData = {
         userId: currentUser?.id || 'guest',
         customer: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
           email: currentUser?.email || '',
-          phone: formData.phone,
-          address: formData.address
+          phone: normalizePhone(formData.phone),
+          address: formData.address.trim()
         },
-        items: cartItems.map(item => ({
-          productId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity
-        })),
-        total: totalPrice
+        items,
+        total: items.reduce((sum, item) => sum + item.price * item.quantity, 0)
       };
 
-      await addOrder(orderData);
+      const createdOrder = await addOrder(orderData as any);
+      if (!createdOrder) {
+        throw new Error('Order creation failed');
+      }
 
-      const summary = formatOrderMessage();
+      const summary = formatOrderMessage(items, orderData.total);
       onOrderSuccess(summary);
     } catch (error) {
       console.error('Erreur lors de la création de la commande:', error);
-      alert('Une erreur est survenue lors de la création de la commande. Veuillez réessayer.');
+      alert('La commande n\'a pas pu être créée : un prix ou un stock a peut-être changé. Rechargez la page et réessayez.');
     } finally {
       setIsSubmitting(false);
     }
   };
   
+  const inputClass = (hasError: boolean) =>
+    `mt-1.5 block w-full rounded-xl border-0 bg-cream px-4 py-3 text-ink-900 ring-1 placeholder:text-ink-500/60 focus:outline-none focus:ring-2 ${hasError ? 'ring-red-400 focus:ring-red-500' : 'ring-ink-900/10 focus:ring-brand-400'}`;
+  const labelClass = 'block text-sm font-semibold text-ink-700';
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-gray-50 p-8 rounded-lg">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-            Prénom <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="firstName"
-            name="firstName"
-            value={formData.firstName}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500"
-          />
-          {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
+          <label htmlFor="firstName" className={labelClass}>Prénom</label>
+          <input type="text" id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} required autoComplete="given-name" className={inputClass(!!errors.firstName)} />
+          {errors.firstName && <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>}
         </div>
         <div>
-          <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-            Nom <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="lastName"
-            name="lastName"
-            value={formData.lastName}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500"
-          />
-          {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
+          <label htmlFor="lastName" className={labelClass}>Nom</label>
+          <input type="text" id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} required autoComplete="family-name" className={inputClass(!!errors.lastName)} />
+          {errors.lastName && <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>}
         </div>
       </div>
       <div>
-        <label htmlFor="address" className="block text-sm font-medium text-gray-700">Adresse Complète</label>
-        <input
-          type="text"
-          id="address"
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-          placeholder="Ex: Cité Keur Gorgui, Lot 123, Dakar"
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500"
-        />
+        <label htmlFor="phone" className={labelClass}>Téléphone (WhatsApp)</label>
+        <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} required placeholder="77 123 45 67" autoComplete="tel" inputMode="tel" className={inputClass(!!errors.phone)} />
+        {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
       </div>
       <div>
-        <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-          Numéro de Téléphone <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="tel"
-          id="phone"
-          name="phone"
-          value={formData.phone}
-          onChange={handleChange}
-          required
-          placeholder="Ex: 771234567"
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500"
-        />
-        {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+        <label htmlFor="address" className={labelClass}>Adresse de livraison <span className="font-normal text-ink-500">(facultatif)</span></label>
+        <input type="text" id="address" name="address" value={formData.address} onChange={handleChange} placeholder="Cité Keur Gorgui, Lot 123, Dakar" autoComplete="street-address" className={inputClass(false)} />
       </div>
-      <div className="text-center pt-4">
-        <button
-          type="submit"
-          disabled={!isFormCurrentlyValid || cartItems.length === 0 || isSubmitting}
-          className="w-full sm:w-auto bg-rose-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-rose-600 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-75"
-        >
-          {isSubmitting ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Création en cours...
-            </span>
-          ) : (
-            'Générer le lien WhatsApp'
-          )}
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={!isFormCurrentlyValid || cartItems.length === 0 || isSubmitting}
+        className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-4 font-semibold text-white shadow-md shadow-[#25D366]/25 transition hover:bg-[#1fb757] disabled:cursor-not-allowed disabled:bg-ink-500/30 disabled:shadow-none"
+      >
+        {isSubmitting ? (
+          <>
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            Création de la commande…
+          </>
+        ) : (
+          <>
+            <WhatsAppIcon className="h-5 w-5" />
+            Commander via WhatsApp
+          </>
+        )}
+      </button>
+      <p className="text-center text-xs text-ink-500">Le paiement et la livraison sont confirmés avec vous sur WhatsApp.</p>
     </form>
   );
 };

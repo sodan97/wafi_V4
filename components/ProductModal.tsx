@@ -22,7 +22,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) => {
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 transition-opacity duration-300"
+      className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4 transition-opacity duration-300"
       onClick={onClose}
       aria-modal="true"
       role="dialog"
@@ -47,7 +47,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) => {
               <div className="flex flex-col justify-center py-4">
                 <h2 className="text-3xl font-bold text-gray-800">{product.name}</h2>
                 <p className="text-gray-600 mt-4 text-base">{product.description}</p>
-                <p className="text-3xl font-bold text-rose-500 mt-6">
+                <p className="text-3xl font-bold text-brand-500 mt-6">
                   {product.price.toLocaleString('fr-FR')} FCFA
                 </p>
               </div>

@@ -3,8 +3,8 @@ dotenv.config(); // Load environment variables first
 
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import admin from 'firebase-admin';
-import userRoutes from './routes/userRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
 import reservationRoutes from './routes/reservationRoutes.js';
@@ -38,9 +38,11 @@ const app = express();
 // --- Middleware ---
 
 const allowedOrigins = [
-  'https://9000-firebase-waafi23-1764438515401.cluster-cbeiita7rbe7iuwhvjs5zww2i4.cloudworkstations.dev',
+  'https://wafi.sn',
+  'https://www.wafi.sn',
+  'https://projet-wafi-dev.web.app',
+  'https://projet-wafi-dev.firebaseapp.com',
   'http://localhost:5173',
-  'https://localhost:5173',
   'http://127.0.0.1:5173',
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
 ];
@@ -55,8 +57,7 @@ const corsOptions = {
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      console.log('CORS blocked origin:', origin);
-      callback(null, true); // Allow all origins in development
+      callback(new Error('Origin not allowed by CORS'));
     }
   },
   credentials: true,
@@ -64,16 +65,16 @@ const corsOptions = {
   allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization'
 };
 
+app.use(helmet());
 app.use(cors(corsOptions));
 
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
 app.use((req, res, next) => {
   req.db = db;
   next();
 });
 
 // --- API Routes ---
-app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/reservations', reservationRoutes);

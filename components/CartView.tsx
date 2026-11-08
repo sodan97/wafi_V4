@@ -3,6 +3,8 @@ import { useCart } from '../context/CartContext';
 import CheckoutForm from './CheckoutForm';
 import { QRCodeCanvas } from 'qrcode.react';
 import { MERCHANT_WHATSAPP_NUMBER } from '../constants';
+import { formatPrice } from './ProductCard';
+import { CartIcon, CheckIcon, MinusIcon, PlusIcon, TrashIcon, WhatsAppIcon, ArrowLeftIcon } from './icons';
 
 interface CartViewProps {
   onContinueShopping: () => void;
@@ -10,141 +12,146 @@ interface CartViewProps {
 
 const CartView: React.FC<CartViewProps> = ({ onContinueShopping }) => {
   const { cartItems, updateQuantity, removeFromCart, itemCount, clearCart } = useCart();
-  const [checkoutState, setCheckoutState] = useState<{ isSubmitted: boolean; whatsappUrl: string }>({
-    isSubmitted: false,
-    whatsappUrl: ''
-  });
+  const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const totalPrice = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
 
   const handleOrderSuccess = (message: string) => {
-    const fullUrl = `https://wa.me/${MERCHANT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-    setCheckoutState({ isSubmitted: true, whatsappUrl: fullUrl });
+    setWhatsappUrl(`https://wa.me/${MERCHANT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`);
     clearCart();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleCopy = async () => {
+    if (!whatsappUrl) return;
+    try {
+      await navigator.clipboard.writeText(whatsappUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Presse-papiers indisponible : le bouton WhatsApp reste utilisable
+    }
+  };
 
-
-  const TrashIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-    </svg>
-  );
-
-  const PlusIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-    </svg>
-  );
-
-  const MinusIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-    </svg>
-  );
-
-  if (checkoutState.isSubmitted) {
+  if (whatsappUrl) {
     return (
-        <div className="text-center bg-green-50 p-6 sm:p-8 rounded-lg transition-all duration-500 ease-in-out border border-green-200 max-w-lg mx-auto">
-            <h3 className="text-2xl font-bold text-green-800">Lien WhatsApp généré</h3>
-            <p className="mt-2 text-gray-700">Scannez ce QR code avec votre téléphone ou cliquez sur le bouton pour ouvrir WhatsApp Web.</p>
-            <div className="my-6 flex justify-center bg-white p-4 rounded-lg shadow-inner">
-                <QRCodeCanvas value={checkoutState.whatsappUrl} size={200} fgColor="#15803d" />
-            </div>
-            <p className="text-gray-600 mb-4 text-sm">Pour copier le lien :</p>
-            <div className="flex flex-col gap-3 items-center">
-              <button
-                onClick={() => navigator.clipboard.writeText(checkoutState.whatsappUrl)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition"
-              >
-                Copier le lien
-              </button>
-              <a
-                href={checkoutState.whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-green-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-green-700 transition-all duration-300"
-              >
-                Ouvrir WhatsApp Web
-              </a>
-            </div>
-            <button onClick={onContinueShopping} className="mt-6 block mx-auto text-rose-600 hover:text-rose-700 font-semibold">
-                Retourner à la boutique
-            </button>
+      <div className="mx-auto max-w-lg animate-fade-in rounded-[2rem] bg-white p-6 text-center ring-1 ring-ink-900/5 sm:p-10">
+        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-brand-600">
+          <CheckIcon className="h-8 w-8" />
+        </span>
+        <h2 className="mt-5 text-3xl font-semibold text-ink-900">Commande enregistrée</h2>
+        <p className="mt-2 text-ink-500">Dernière étape : envoyez-nous le message WhatsApp pour confirmer le paiement et la livraison.</p>
+
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-4 font-semibold text-white shadow-md shadow-[#25D366]/25 transition hover:bg-[#1fb757]"
+        >
+          <WhatsAppIcon className="h-5 w-5" />
+          Envoyer sur WhatsApp
+        </a>
+
+        <div className="mt-8 hidden rounded-3xl bg-cream p-5 sm:block">
+          <p className="text-sm font-semibold text-ink-700">Sur ordinateur ? Scannez avec votre téléphone</p>
+          <div className="mt-4 inline-flex rounded-2xl bg-white p-3">
+            <QRCodeCanvas value={whatsappUrl} size={168} fgColor="#17365d" />
+          </div>
         </div>
+
+        <div className="mt-6 flex flex-col items-center gap-3 text-sm">
+          <button onClick={handleCopy} className="font-semibold text-ink-700 hover:text-brand-700">
+            {copied ? 'Lien copié' : 'Copier le lien'}
+          </button>
+          <button onClick={onContinueShopping} className="font-semibold text-brand-700 hover:underline">
+            Retour à la boutique
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="mx-auto max-w-lg rounded-[2rem] bg-white px-6 py-16 text-center ring-1 ring-ink-900/5">
+        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sun-100 text-ink-900">
+          <CartIcon className="h-8 w-8" />
+        </span>
+        <h2 className="mt-5 text-3xl font-semibold text-ink-900">Votre panier est vide</h2>
+        <p className="mt-2 text-ink-500">Des robots, des éoliennes et des voitures attendent vos petits ingénieurs.</p>
+        <button onClick={onContinueShopping} className="mt-7 rounded-full bg-brand-600 px-7 py-3 font-semibold text-white hover:bg-brand-700">
+          Découvrir les jouets
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h2 className="text-3xl font-bold text-gray-800 mb-8">Votre Panier</h2>
-      
-      {cartItems.length === 0 ? (
-        <div className="text-center py-8">
-          <h3 className="text-xl text-gray-600 mb-4">Votre panier est vide</h3>
-          <button
-            onClick={onContinueShopping}
-            className="bg-rose-500 text-white px-6 py-2 rounded-lg hover:bg-rose-600 transition-colors"
-          >
-            Continuer mes achats
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-4">
-            {cartItems.map(item => (
-              <div key={item.id} className="flex items-center gap-4 bg-white p-4 rounded-lg shadow">
-                <img src={item.imageUrls[0]} alt={item.name} className="w-16 h-16 object-cover rounded" />
-                <div className="flex-1">
-                  <h3 className="font-semibold">{item.name}</h3>
-                  <p className="text-rose-500 font-bold">{item.price.toLocaleString('fr-FR')} FCFA</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    className="p-1 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
-                  >
-                    <MinusIcon />
-                  </button>
-                  <span className="px-3 py-1 bg-gray-100 rounded">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    className="p-1 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
-                  >
-                    <PlusIcon />
-                  </button>
-                </div>
-                <button
-                  onClick={() => removeFromCart(item.id)}
-                  className="p-2 text-red-500 hover:bg-red-50 rounded transition-colors"
-                >
-                  <TrashIcon />
-                </button>
-              </div>
-            ))}
-          </div>
+    <div className="animate-fade-in">
+      <button onClick={onContinueShopping} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-ink-700 hover:text-brand-700">
+        <ArrowLeftIcon className="h-5 w-5" />
+        Continuer mes achats
+      </button>
+      <h1 className="text-3xl font-semibold text-ink-900 sm:text-4xl">
+        Mon panier <span className="text-ink-500">({itemCount})</span>
+      </h1>
 
-          <div className="bg-white p-6 rounded-lg shadow h-fit">
-            <h3 className="text-xl font-bold mb-4">Résumé de la commande</h3>
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between">
-                <span>Articles ({itemCount})</span>
-                <span>{totalPrice.toLocaleString('fr-FR')} FCFA</span>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_400px] lg:items-start">
+        <ul className="space-y-3">
+          {cartItems.map(item => (
+            <li key={item.id} className="flex gap-4 rounded-3xl bg-white p-3 ring-1 ring-ink-900/5 sm:p-4">
+              <div className="h-24 w-24 shrink-0 rounded-2xl bg-cream p-2 sm:h-28 sm:w-28">
+                <img src={item.imageUrls[0]} alt={item.name} className="h-full w-full object-contain mix-blend-multiply" />
               </div>
-              <div className="flex justify-between font-bold text-lg border-t pt-2">
-                <span>Total</span>
-                <span>{totalPrice.toLocaleString('fr-FR')} FCFA</span>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div className="flex items-start justify-between gap-2">
+                  <h2 className="font-sans text-sm font-semibold text-ink-900 first-letter:uppercase sm:text-base">{item.name}</h2>
+                  <button onClick={() => removeFromCart(item.id)} className="-mr-1 -mt-1 rounded-full p-2 text-ink-500 transition hover:bg-red-50 hover:text-red-600" aria-label={`Retirer ${item.name} du panier`}>
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                </div>
+                <p className="text-sm text-ink-500">{formatPrice(item.price)} l’unité</p>
+                <div className="mt-auto flex items-center justify-between pt-2">
+                  <div className="flex items-center rounded-full bg-cream p-0.5">
+                    <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="flex h-9 w-9 items-center justify-center rounded-full text-ink-700 hover:bg-white" aria-label="Diminuer la quantité">
+                      <MinusIcon className="h-4 w-4" />
+                    </button>
+                    <span className="w-8 text-center text-sm font-semibold">{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)} disabled={item.quantity >= item.stock} className="flex h-9 w-9 items-center justify-center rounded-full text-ink-700 hover:bg-white disabled:opacity-30" aria-label="Augmenter la quantité">
+                      <PlusIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="font-display text-lg font-semibold text-ink-900">{formatPrice(item.price * item.quantity)}</p>
+                </div>
               </div>
+            </li>
+          ))}
+        </ul>
+
+        <aside className="rounded-3xl bg-white p-5 ring-1 ring-ink-900/5 sm:p-6 lg:sticky lg:top-28">
+          <h2 className="text-xl font-semibold text-ink-900">Récapitulatif</h2>
+          <dl className="mt-4 space-y-2 text-sm">
+            <div className="flex justify-between text-ink-700">
+              <dt>Articles ({itemCount})</dt>
+              <dd>{formatPrice(totalPrice)}</dd>
             </div>
+            <div className="flex justify-between text-ink-700">
+              <dt>Livraison</dt>
+              <dd className="text-ink-500">Confirmée sur WhatsApp</dd>
+            </div>
+            <div className="flex items-baseline justify-between border-t border-ink-900/5 pt-3">
+              <dt className="font-semibold text-ink-900">Total</dt>
+              <dd className="font-display text-2xl font-semibold text-ink-900">{formatPrice(totalPrice)}</dd>
+            </div>
+          </dl>
 
-            <CheckoutForm
-              cartItems={cartItems}
-              totalPrice={totalPrice}
-              onOrderSuccess={handleOrderSuccess}
-            />
+          <div className="mt-6 border-t border-ink-900/5 pt-6">
+            <h3 className="mb-4 font-sans text-sm font-semibold uppercase tracking-wider text-ink-500">Vos coordonnées</h3>
+            <CheckoutForm cartItems={cartItems} totalPrice={totalPrice} onOrderSuccess={handleOrderSuccess} />
           </div>
-        </div>
-      )}
+        </aside>
+      </div>
     </div>
   );
 };

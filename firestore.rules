@@ -1,121 +1,178 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Fonction helper pour vérifier si l'utilisateur est authentifié
+
+    // ---------- Helpers ----------
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    // Fonction helper pour vérifier si l'utilisateur est admin
+
     function isAdmin() {
-      return isAuthenticated() && 
+      return isAuthenticated() &&
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
-    
-    // Fonction helper pour vérifier si c'est le propriétaire
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    // Collection users
+
+    function isShortString(value, maxLen) {
+      return value is string && value.size() <= maxLen;
+    }
+
+    function isEmail(value) {
+      return value is string && value.size() <= 254 && value.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$');
+    }
+
+    // ---------- Commandes : validation des articles ----------
+    // Les règles n'ont pas de boucle : on vérifie jusqu'à 10 articles (limite de lectures par requête).
+    // Chaque article doit avoir le prix réel du produit en base et un stock suffisant.
+
+    function itemOk(items, i) {
+      return i >= items.size() || (
+        items[i].keys().hasOnly(['productId', 'name', 'price', 'quantity']) &&
+        items[i].productId is string &&
+        isShortString(items[i].name, 200) &&
+        items[i].quantity is int &&
+        items[i].quantity > 0 &&
+        items[i].quantity <= 100 &&
+        items[i].price == get(/databases/$(database)/documents/products/$(items[i].productId)).data.price &&
+        items[i].quantity <= get(/databases/$(database)/documents/products/$(items[i].productId)).data.stock
+      );
+    }
+
+    function lineTotal(items, i) {
+      return i < items.size() ? items[i].price * items[i].quantity : 0;
+    }
+
+    function itemsOk(items) {
+      return items is list && items.size() > 0 && items.size() <= 10 &&
+             itemOk(items, 0) && itemOk(items, 1) && itemOk(items, 2) && itemOk(items, 3) &&
+             itemOk(items, 4) && itemOk(items, 5) && itemOk(items, 6) && itemOk(items, 7) &&
+             itemOk(items, 8) && itemOk(items, 9);
+    }
+
+    function totalOk(items, total) {
+      return total == lineTotal(items, 0) + lineTotal(items, 1) + lineTotal(items, 2) +
+                      lineTotal(items, 3) + lineTotal(items, 4) + lineTotal(items, 5) +
+                      lineTotal(items, 6) + lineTotal(items, 7) + lineTotal(items, 8) +
+                      lineTotal(items, 9);
+    }
+
+    function customerOk(c) {
+      return c is map &&
+             c.keys().hasOnly(['firstName', 'lastName', 'phone', 'address', 'email']) &&
+             isShortString(c.firstName, 100) && c.firstName.size() > 0 &&
+             isShortString(c.lastName, 100) && c.lastName.size() > 0 &&
+             c.phone is string && c.phone.matches('^\\+?[0-9 ]{7,20}$') &&
+             (!('address' in c) || isShortString(c.address, 300)) &&
+             (!('email' in c) || c.email == '' || isEmail(c.email));
+    }
+
+    function orderOk(data) {
+      return data.keys().hasOnly(['userId', 'customer', 'items', 'total', 'status', 'date']) &&
+             data.status == 'pending' &&
+             data.date is string &&
+             customerOk(data.customer) &&
+             itemsOk(data.items) &&
+             totalOk(data.items, data.total);
+    }
+
+    // ---------- Collections ----------
+
     match /users/{userId} {
-      // Lecture : utilisateur connecté peut lire son propre profil, admin peut tout lire
       allow read: if isOwner(userId) || isAdmin();
-      
-      // Création : lors de l'inscription, l'utilisateur peut créer son propre document
-      allow create: if isAuthenticated() && 
-                       request.auth.uid == userId &&
-                       request.resource.data.role == 'user'; // Empêche auto-promotion en admin
-      
-      // Mise à jour : utilisateur peut modifier son profil (sauf le role), admin peut tout modifier
-      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || 
+
+      // Inscription : le document porte l'uid de l'utilisateur et le rôle 'user' (pas d'auto-promotion)
+      allow create: if isOwner(userId) &&
+                       request.resource.data.role == 'user' &&
+                       request.resource.data.keys().hasOnly(['email', 'firstName', 'lastName', 'role', 'createdAt', 'authProvider']);
+
+      // Mise à jour : l'utilisateur ne peut pas changer son rôle
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) ||
                        isAdmin();
-      
-      // Suppression : seulement admin
+
       allow delete: if isAdmin();
     }
-    
-    // Collection products
+
     match /products/{productId} {
-      // Lecture : tout le monde peut lire les produits
       allow read: if true;
-      
-      // Écriture : seulement admin
       allow write: if isAdmin();
     }
-    
-    // Collection favorites
+
     match /favorites/{favoriteId} {
-      // Lecture : utilisateur peut lire ses propres favoris, admin peut tout lire
-      allow read: if isAuthenticated() && 
+      allow read: if isAuthenticated() &&
                      (resource.data.userId == request.auth.uid || isAdmin());
-      
-      // Création : utilisateur connecté peut créer ses favoris
-      allow create: if isAuthenticated() && 
-                       request.resource.data.userId == request.auth.uid;
-      
-      // Suppression : utilisateur peut supprimer ses favoris, admin peut tout supprimer
-      allow delete: if isAuthenticated() && 
+
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.productId is string &&
+                       request.resource.data.keys().hasOnly(['userId', 'productId', 'createdAt']);
+
+      allow delete: if isAuthenticated() &&
                        (resource.data.userId == request.auth.uid || isAdmin());
     }
-    
-    // Collection reservations
+
     match /reservations/{reservationId} {
-      // Lecture : utilisateur peut lire ses réservations, admin peut tout lire
-      allow read: if isAuthenticated() && 
-                     (resource.data.userId == request.auth.uid || 
+      allow read: if isAuthenticated() &&
+                     (resource.data.userId == request.auth.uid ||
                       resource.data.guestEmail == request.auth.token.email ||
                       isAdmin());
-      
-      // Création : tout le monde peut créer une réservation (même invités via guestEmail)
-      allow create: if true;
-      
-      // Suppression : utilisateur peut supprimer ses réservations, admin peut tout supprimer
-      allow delete: if isAuthenticated() && 
+
+      // Utilisateur connecté : la réservation porte son uid
+      // Invité : uniquement un email valide, pas d'uid
+      allow create: if request.resource.data.productId is string &&
+                       request.resource.data.notificationMethod in ['email', 'whatsapp'] &&
+                       request.resource.data.status == 'pending' &&
+                       request.resource.data.createdAt is string &&
+                       (
+                         (isAuthenticated() &&
+                          request.resource.data.userId == request.auth.uid &&
+                          request.resource.data.keys().hasOnly(['productId', 'userId', 'notificationMethod', 'createdAt', 'status']))
+                         ||
+                         (isEmail(request.resource.data.guestEmail) &&
+                          request.resource.data.keys().hasOnly(['productId', 'guestEmail', 'notificationMethod', 'createdAt', 'status']))
+                       );
+
+      allow delete: if isAuthenticated() &&
                        (resource.data.userId == request.auth.uid || isAdmin());
     }
-    
-    // Collection orders
+
     match /orders/{orderId} {
-      // Lecture : utilisateur peut lire ses commandes, admin peut tout lire
-      allow read: if isAuthenticated() && 
+      allow read: if isAuthenticated() &&
                      (resource.data.userId == request.auth.uid || isAdmin());
-      
-      // Création : utilisateur connecté peut créer ses commandes
-      allow create: if isAuthenticated();
-      
-      // Mise à jour : seulement admin (pour changer le statut)
+
+      // Client connecté : userId = son uid. Invité : userId = 'guest'.
+      // Prix, total et stock sont vérifiés contre la base (impossible de payer moins cher).
+      allow create: if orderOk(request.resource.data) &&
+                       ((isAuthenticated() && request.resource.data.userId == request.auth.uid) ||
+                        (!isAuthenticated() && request.resource.data.userId == 'guest'));
+
       allow update: if isAdmin();
-      
-      // Suppression : seulement admin
       allow delete: if isAdmin();
     }
-    
-    // Collection notifications (si vous en avez une)
+
     match /notifications/{notificationId} {
-      // Lecture : utilisateur peut lire ses notifications, admin peut tout lire
-      allow read: if isAuthenticated() && 
+      allow read: if isAuthenticated() &&
                      (resource.data.userId == request.auth.uid || isAdmin());
-      
-      // Création : système backend ou admin
       allow create: if isAdmin();
-      
-      // Mise à jour : utilisateur peut marquer comme lu, admin peut tout modifier
-      allow update: if isAuthenticated() && 
+      allow update: if isAuthenticated() &&
                        (resource.data.userId == request.auth.uid || isAdmin());
-      
-      // Suppression : utilisateur peut supprimer ses notifications, admin peut tout supprimer
-      allow delete: if isAuthenticated() && 
+      allow delete: if isAuthenticated() &&
                        (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // Collection mail - utilisée par Firebase Extension "Trigger Email"
+    // Collection mail - utilisée par l'extension Firebase "Trigger Email"
     match /mail/{mailId} {
-      // Création : utilisateur connecté peut créer un email (welcome, stock notification)
-      allow create: if isAuthenticated();
+      // Admin : tout envoi (notifications de stock).
+      // Client : uniquement un email vers sa propre adresse (email de bienvenue), pour empêcher le spam.
+      allow create: if isAdmin() ||
+                       (isAuthenticated() &&
+                        request.resource.data.to is list &&
+                        request.resource.data.to.size() == 1 &&
+                        request.resource.data.to[0] == request.auth.token.email);
 
-      // Lecture/mise à jour/suppression : seulement l'extension (service account) ou admin
       allow read, update, delete: if isAdmin();
     }
   }

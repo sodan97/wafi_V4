@@ -33,7 +33,7 @@ const HeroCarousel: React.FC = () => {
           className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentIndex ? 'opacity-100' : 'opacity-0'}`}
         >
           <img src={slide.imageUrl} alt={slide.title} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center items-center text-center p-4">
+          <div className="absolute inset-0 bg-black/40 flex flex-col justify-center items-center text-center p-4">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.7)'}}>{slide.title}</h2>
             <p className="text-lg md:text-xl text-gray-200" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.7)'}}>{slide.subtitle}</p>
           </div>

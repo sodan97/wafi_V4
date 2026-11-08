@@ -3,61 +3,57 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>wafi</title>
-    <img src="/dist/assets/logo_wafi.webp" alt="" width="100" height="auto"> <!-- Replace "/path/to/your/logo.png" with the actual path to your logo file -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              'poppins': ['Poppins', 'sans-serif'],
-            },
-            colors: {
-              'rose': {
-                50: '#fff1f2',
-                100: '#ffe4e6',
-                200: '#fecdd3',
-                300: '#fda4af',
-                400: '#fb7185',
-                500: '#f43f5e',
-                600: '#e11d48',
-                700: '#be123c',
-                800: '#9f1239',
-                900: '#881337',
-              }
-            }
-          }
-        }
+    <title>WAFI - Jouets éducatifs au Sénégal | Apprendre en jouant</title>
+    <meta name="description" content="WAFI : jouets éducatifs et kits scientifiques pour éveiller l'intelligence et la créativité des enfants. Commande facile via WhatsApp, livraison partout à Dakar." />
+    <meta name="theme-color" content="#0e7c84" />
+    <link rel="canonical" href="https://wafi.sn/" />
+
+    <!-- Icônes (onglet du navigateur, écran d'accueil du téléphone) -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Aperçu du lien partagé (WhatsApp, Facebook, Instagram, Google) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="WAFI" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:url" content="https://wafi.sn/" />
+    <meta property="og:title" content="WAFI - Apprendre en jouant" />
+    <meta property="og:description" content="Jouets éducatifs et kits scientifiques pour éveiller l'intelligence et la créativité des enfants. Commande via WhatsApp, livraison partout à Dakar." />
+    <meta property="og:image" content="https://wafi.sn/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Logo WAFI - Apprendre en jouant" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="WAFI - Apprendre en jouant" />
+    <meta name="twitter:description" content="Jouets éducatifs pour éveiller l'intelligence et la créativité des enfants." />
+    <meta name="twitter:image" content="https://wafi.sn/og-image.jpg" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Store",
+        "name": "WAFI",
+        "slogan": "Apprendre en jouant",
+        "url": "https://wafi.sn/",
+        "logo": "https://wafi.sn/icon-512.png",
+        "image": "https://wafi.sn/og-image.jpg",
+        "email": "contact@wafi.sn",
+        "currenciesAccepted": "XOF",
+        "address": { "@type": "PostalAddress", "addressCountry": "SN" }
       }
     </script>
-    
-    <style>
-      body {
-        font-family: 'Poppins', sans-serif;
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
-    "react/": "https://esm.sh/react@^19.1.1/",
-    "react": "https://esm.sh/react@^19.1.1",
-    "qrcode.react": "https://esm.sh/qrcode.react@4.2.0",
-    "log": "https://esm.sh/log@^6.3.2",
-    "xlsx": "https://esm.sh/xlsx@0.18.5"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
-  <body class="bg-gray-50">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
     <div id="root"></div>
+    <noscript>Activez JavaScript pour utiliser la boutique WAFI.</noscript>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

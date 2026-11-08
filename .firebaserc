@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "wafi-projet",
+    "default": "projet-wafi-dev",
     "dev": "projet-wafi-dev"
   },
   "targets": {},

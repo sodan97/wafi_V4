@@ -159,7 +159,7 @@ const ProductManager: React.FC = () => {
                 <h3 className="text-2xl font-bold text-gray-800">Gestion des Produits</h3>
                 <button
                     onClick={() => setIsAddModalOpen(true)}
-                    className="w-full sm:w-auto bg-rose-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-rose-600 transition-colors shadow flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto bg-brand-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-brand-600 transition-colors shadow flex items-center justify-center gap-2"
                 >
                     <span className="pointer-events-none flex items-center gap-2">
                       <PlusIcon className="w-5 h-5" />
@@ -194,7 +194,7 @@ const ProductManager: React.FC = () => {
                         placeholder="Rechercher par nom..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-rose-400"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-400"
                     />
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 </div>
@@ -285,7 +285,7 @@ const ProductManager: React.FC = () => {
                             )}
                         </div>
                         <div className="p-4 flex flex-col flex-grow">
-                            <p className="text-xs font-semibold text-rose-500 uppercase tracking-wider">{product.category}</p>
+                            <p className="text-xs font-semibold text-brand-500 uppercase tracking-wider">{product.category}</p>
                             <h4 className="font-bold text-lg text-gray-800 mt-1 mb-3 flex-grow">{product.name}</h4>
                             
                             <div className="flex justify-between items-center mb-4">
@@ -301,7 +301,7 @@ const ProductManager: React.FC = () => {
                                     placeholder="Nouveau stock"
                                     value={stockLevels[product.id] ?? ''}
                                     onChange={(e) => handleStockChange(product.id, e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-rose-500 focus:border-rose-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500"
                                     min="0"
                                     aria-label={`Nouveau stock pour ${product.name}`}
                                 />
@@ -550,7 +550,7 @@ const AdminPage: React.FC = () => {
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`py-3 px-6 font-semibold text-center transition-colors duration-200 ${activeTab === tab.id ? 'border-b-2 border-rose-500 text-rose-600' : 'text-gray-500 hover:text-gray-800'}`}
+                        className={`py-3 px-6 font-semibold text-center transition-colors duration-200 ${activeTab === tab.id ? 'border-b-2 border-brand-500 text-brand-600' : 'text-gray-500 hover:text-gray-800'}`}
                     >
                         {tab.label}
                     </button>

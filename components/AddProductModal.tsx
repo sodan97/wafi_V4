@@ -187,7 +187,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => {
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 transition-opacity duration-300"
+      className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4 transition-opacity duration-300"
       onClick={onClose}
       aria-modal="true"
       role="dialog"
@@ -207,17 +207,17 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => {
             {error && <p className="bg-red-100 text-red-700 p-3 rounded-md text-sm mb-4">{error}</p>}
           
             <form onSubmit={handleSubmit} className="space-y-4">
-                <input type="text" name="name" placeholder="Nom du produit" value={formData.name} onChange={handleChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500" />
+                <input type="text" name="name" placeholder="Nom du produit" value={formData.name} onChange={handleChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
                 
-                <textarea name="description" placeholder="Description" value={formData.description} onChange={handleChange} required rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500" />
+                <textarea name="description" placeholder="Description" value={formData.description} onChange={handleChange} required rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="number" name="price" placeholder="Prix (FCFA)" value={formData.price} onChange={handleChange} required min="0" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500" />
-                    <input type="number" name="stock" placeholder="Stock initial" value={formData.stock} onChange={handleChange} required min="0" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500" />
+                    <input type="number" name="price" placeholder="Prix (FCFA)" value={formData.price} onChange={handleChange} required min="0" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
+                    <input type="number" name="stock" placeholder="Stock initial" value={formData.stock} onChange={handleChange} required min="0" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
                 </div>
 
                 <div>
-                    <input list="categories" name="category" placeholder="Catégorie (existante ou nouvelle)" value={formData.category} onChange={handleChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500" />
+                    <input list="categories" name="category" placeholder="Catégorie (existante ou nouvelle)" value={formData.category} onChange={handleChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500" />
                     <datalist id="categories">
                         {existingCategories.map(cat => <option key={cat} value={cat} />)}
                     </datalist>
@@ -226,14 +226,14 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => {
                 <div className="space-y-3 bg-gray-50 p-4 rounded-lg border">
                     <label className="block text-sm font-medium text-gray-700">Images du produit</label>
                     <div className="flex items-center gap-2">
-                         <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Coller une URL d'image (http...)" className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500"/>
+                         <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Coller une URL d'image (http...)" className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500"/>
                          <button type="button" onClick={handleAddImageUrl} className="px-4 py-2 rounded-md font-semibold text-white bg-slate-600 hover:bg-slate-700 transition-colors flex-shrink-0">Ajouter URL</button>
                     </div>
                     <div className="relative flex items-center">
                         <div className="flex-grow border-t border-gray-300"></div><span className="flex-shrink mx-4 text-gray-500 text-xs">OU</span><div className="flex-grow border-t border-gray-300"></div>
                     </div>
                     <div>
-                        <label htmlFor="file-upload" className="w-full cursor-pointer bg-white border-2 border-dashed border-gray-300 rounded-md p-4 flex flex-col items-center justify-center text-sm text-gray-600 hover:border-rose-400 hover:bg-rose-50 transition-colors">
+                        <label htmlFor="file-upload" className="w-full cursor-pointer bg-white border-2 border-dashed border-gray-300 rounded-md p-4 flex flex-col items-center justify-center text-sm text-gray-600 hover:border-brand-400 hover:bg-brand-50 transition-colors">
                            <svg className="w-8 h-8 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                            <span className="mt-2">Téléverser depuis votre appareil (max 5MB) → uploadé dans Firebase Storage</span>
                         </label>
@@ -273,7 +273,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => {
                         <div>
                             <p className="text-xs text-gray-600 mb-1">Upload en cours... {uploadProgress}%</p>
                             <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div className="bg-rose-500 h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }}></div>
+                                <div className="bg-brand-500 h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }}></div>
                             </div>
                         </div>
                     )}
@@ -298,7 +298,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => {
                                 value={videoUrl}
                                 onChange={(e) => setVideoUrl(e.target.value)}
                                 placeholder="Coller un lien YouTube (ex: https://www.youtube.com/watch?v=...)"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-rose-500 focus:border-rose-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500"
                             />
                         </>
                     )}
@@ -311,7 +311,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => {
                     <button type="button" onClick={onClose} className="px-6 py-2 rounded-md font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">
                         Annuler
                     </button>
-                    <button type="submit" disabled={isSubmitting} className="px-6 py-2 rounded-md font-semibold text-white bg-rose-500 hover:bg-rose-600 transition-colors disabled:opacity-60">
+                    <button type="submit" disabled={isSubmitting} className="px-6 py-2 rounded-md font-semibold text-white bg-brand-500 hover:bg-brand-600 transition-colors disabled:opacity-60">
                         {isSubmitting ? 'Upload en cours...' : 'Ajouter le produit'}
                     </button>
                 </div>

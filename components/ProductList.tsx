@@ -54,7 +54,7 @@ const ProductList: React.FC<ProductListProps> = ({ category, onProductSelect, on
   return (
     <div className="mt-2">
       <div className="mb-16">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2 border-l-4 border-rose-500 pl-4">{category}</h2>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2 border-l-4 border-brand-500 pl-4">{category}</h2>
         <p className="text-md text-gray-500 mb-6 pl-5">Découvrez tous les produits de la catégorie {category}.</p>
 
         <div className="flex gap-6">
@@ -71,7 +71,7 @@ const ProductList: React.FC<ProductListProps> = ({ category, onProductSelect, on
                   placeholder="Nom ou description..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 />
               </div>
 
@@ -84,7 +84,7 @@ const ProductList: React.FC<ProductListProps> = ({ category, onProductSelect, on
                   placeholder="0"
                   value={minPrice}
                   onChange={(e) => setMinPrice(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 />
               </div>
 
@@ -97,7 +97,7 @@ const ProductList: React.FC<ProductListProps> = ({ category, onProductSelect, on
                   placeholder="999999"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 />
               </div>
 
@@ -108,7 +108,7 @@ const ProductList: React.FC<ProductListProps> = ({ category, onProductSelect, on
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc' | 'none')}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 >
                   <option value="none">Sans tri</option>
                   <option value="asc">Prix croissant</option>

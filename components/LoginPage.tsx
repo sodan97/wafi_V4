@@ -147,10 +147,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
+    <div className="mx-auto max-w-md rounded-[2rem] bg-white p-6 ring-1 ring-ink-900/5 sm:p-10">
       {!showForgotPassword ? (
         <>
-          <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Connexion</h2>
+          <h2 className="text-3xl font-semibold text-center text-ink-900 mb-6">Connexion</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -159,7 +159,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-ink-700 mb-1">
                 Email <span className="text-red-500">*</span>
               </label>
               <input
@@ -167,8 +167,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
                 id="email"
                 value={email}
                 onChange={handleEmailChange}
-                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors ${
-                  fieldErrors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                className={`mt-1 block w-full rounded-xl bg-cream px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors ${
+                  fieldErrors.email ? 'border-red-500 bg-red-50' : 'border-ink-900/10'
                 }`}
                 placeholder="nom@gmail.com"
                 disabled={isLoading}
@@ -184,7 +184,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-ink-700 mb-1">
                 Mot de passe <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -193,8 +193,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
                   id="password"
                   value={password}
                   onChange={handlePasswordChange}
-                  className={`mt-1 block w-full px-3 py-2 pr-10 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors ${
-                    fieldErrors.password ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  className={`mt-1 block w-full rounded-xl bg-cream px-4 py-3 pr-10 border focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors ${
+                    fieldErrors.password ? 'border-red-500 bg-red-50' : 'border-ink-900/10'
                   }`}
                   placeholder="Votre mot de passe"
                   disabled={isLoading}
@@ -202,7 +202,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-ink-500 transition-colors"
                   disabled={isLoading}
                 >
                   {showPassword ? (
@@ -231,7 +231,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
               <button
                 type="button"
                 onClick={() => setShowForgotPassword(true)}
-                className="text-sm text-rose-600 hover:text-rose-700 hover:underline transition-colors"
+                className="text-sm text-brand-600 hover:text-brand-700 hover:underline transition-colors"
                 disabled={isLoading}
               >
                 Mot de passe oublié ?
@@ -242,10 +242,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300 ${
+                className={`w-full font-semibold py-3.5 px-4 rounded-full shadow-md transition-all duration-300 ${
                   isLoading
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-rose-500 hover:bg-rose-600 hover:shadow-xl transform hover:-translate-y-0.5'
+                    : 'bg-brand-600 hover:bg-brand-700 hover:shadow-xl transform hover:-translate-y-0.5'
                 } text-white`}
               >
                 {isLoading ? (
@@ -269,7 +269,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
                 <div className="w-full border-t border-gray-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Ou continuer avec</span>
+                <span className="px-2 bg-white text-ink-500">Ou continuer avec</span>
               </div>
             </div>
 
@@ -277,7 +277,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
               <button
                 onClick={handleGoogleLogin}
                 disabled={isLoading}
-                className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-full bg-white hover:bg-cream transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -285,17 +285,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                <span className="text-gray-700 font-medium">Continuer avec Google</span>
+                <span className="text-ink-700 font-medium">Continuer avec Google</span>
               </button>
             </div>
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ink-500">
               Pas encore de compte ?{' '}
               <button
                 onClick={() => setView('register')}
-                className="font-semibold text-rose-600 hover:text-rose-700 hover:underline transition-colors"
+                className="font-semibold text-brand-600 hover:text-brand-700 hover:underline transition-colors"
                 disabled={isLoading}
               >
                 Inscrivez-vous ici
@@ -313,7 +313,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
                 setResetError('');
                 setResetSuccess('');
               }}
-              className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+              className="flex items-center text-ink-500 hover:text-ink-900 transition-colors"
             >
               <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -322,8 +322,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
             </button>
           </div>
 
-          <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">Mot de passe oublié</h2>
-          <p className="text-center text-gray-600 mb-6">
+          <h2 className="text-3xl font-semibold text-center text-ink-900 mb-2">Mot de passe oublié</h2>
+          <p className="text-center text-ink-500 mb-6">
             Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
           </p>
 
@@ -346,7 +346,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
             )}
 
             <div>
-              <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="reset-email" className="block text-sm font-medium text-ink-700 mb-1">
                 Email <span className="text-red-500">*</span>
               </label>
               <input
@@ -354,7 +354,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
                 id="reset-email"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                className="mt-1 block w-full rounded-xl bg-cream px-4 py-3 border border-ink-900/10 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                 placeholder="votre@email.com"
                 disabled={isLoading}
               />
@@ -364,10 +364,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300 ${
+                className={`w-full font-semibold py-3.5 px-4 rounded-full shadow-md transition-all duration-300 ${
                   isLoading
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-rose-500 hover:bg-rose-600 hover:shadow-xl transform hover:-translate-y-0.5'
+                    : 'bg-brand-600 hover:bg-brand-700 hover:shadow-xl transform hover:-translate-y-0.5'
                 } text-white`}
               >
                 {isLoading ? (

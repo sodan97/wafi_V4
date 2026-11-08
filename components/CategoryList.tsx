@@ -15,7 +15,7 @@ const CategoryCard: React.FC<{ category: { name: string; imageUrl: string }; onC
         onKeyPress={(e) => (e.key === 'Enter' || e.key === ' ') && onClick()}
     >
         <img src={category.imageUrl} alt={category.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-        <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-50 transition-colors duration-300 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300 flex items-center justify-center">
             <h3 className="text-white text-2xl font-bold text-center p-2" style={{textShadow: '1px 1px 3px rgba(0,0,0,0.7)'}}>{category.name}</h3>
         </div>
     </div>
@@ -51,7 +51,7 @@ const CategoryList: React.FC<CategoryListProps> = ({ onSelectCategory }) => {
 
   return (
     <div className="mt-16">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2 border-l-4 border-rose-500 pl-4">Nos Catégories</h2>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2 border-l-4 border-brand-500 pl-4">Nos Catégories</h2>
         <p className="text-md text-gray-500 mb-8 pl-5">Parcourez nos collections par catégorie.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8">
             {categories.map(category => (
