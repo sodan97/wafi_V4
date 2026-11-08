@@ -26,18 +26,16 @@ firebase deploy --only hosting                      # site
 firebase deploy --only firestore:rules,firestore:indexes  # règles de sécurité + index
 ```
 
-Backend : App Hosting déploie depuis la branche GitHub de `sodan97/wafi_V4` (pousser le code, puis lancer un déploiement depuis la console Firebase > App Hosting).
+Backend Express (`backend/`) : il n'est plus utilisé par le site et son déploiement App Hosting (`wafi-backend`) a été supprimé le 8 novembre 2026, car il exposait les commandes. Le code reste ici pour mémoire.
 
-### Emails : migration hors de l'extension « Trigger Email » (avant le 31 mars 2027)
+### Emails : fonction `sendMail`
 
-1. Enregistrer le mot de passe du compte OVH `contact@wafi.sn` (saisi par vous, jamais dans le code) :
-   `firebase functions:secrets:set SMTP_PASSWORD`
-2. Déployer la fonction : `firebase deploy --only functions`
-3. **Aussitôt après**, désinstaller l'extension pour éviter les emails en double :
-   `firebase ext:uninstall firestore-send-email`
-4. Tester : créer un compte client → l'email de bienvenue doit arriver ; dans Firestore, le document `mail` passe à `delivery.state = SUCCESS`.
+Depuis le 8 novembre 2026, les emails sont envoyés par la fonction `functions/index.js` (l'extension « Trigger Email » a été désinstallée). Le site écrit toujours un document dans la collection `mail`, au même format qu'avant.
 
-Paramètres modifiables (valeurs par défaut) : `SMTP_HOST=ssl0.ovh.net`, `SMTP_PORT=465`, `SMTP_USER=contact@wafi.sn`, `DEFAULT_FROM=WAFI <contact@wafi.sn>`.
+- Mot de passe de la boîte OVH `contact@wafi.sn` : dans Secret Manager (`SMTP_PASSWORD`). Pour le changer : `firebase functions:secrets:set SMTP_PASSWORD`, puis redéployer la fonction.
+- Autres réglages (serveur, port, expéditeur) : `functions/.env.projet-wafi-dev`.
+- Déployer : `firebase deploy --only functions`. Sur un ordinateur lent, l'analyse du code peut dépasser 10 s : définir `FUNCTIONS_DISCOVERY_TIMEOUT=60` avant la commande.
+- Vérifier un envoi : dans Firestore, le document `mail` passe à `delivery.state = SUCCESS` (ou `ERROR` avec le message dans `delivery.error`).
 
 ## Sécurité (règles Firestore)
 

@@ -1,2 +1,4 @@
 node_modules/
 .env*
+# Réglages non secrets du projet (le mot de passe est dans Secret Manager)
+!.env.projet-wafi-dev
